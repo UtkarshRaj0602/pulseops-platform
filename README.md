@@ -16,7 +16,7 @@ API Service (FastAPI)
 
 ↓
 
-Redis Queue
+SQS/Redis Queue
 
 ↓
 
