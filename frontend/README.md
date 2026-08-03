@@ -8,6 +8,10 @@ The application has been intentionally kept minimal, as the primary focus of thi
 
 ---
 
+![Frontend UI](image.png)
+
+---
+
 ## Tech Stack
 
 - React
