@@ -8,7 +8,7 @@ The application has been intentionally kept minimal, as the primary focus of thi
 
 ---
 
-![Frontend UI](frontend/public/Frontend-UI.jpg)
+![Frontend UI](public/Frontend-UI.jpg)
 
 ---
 
