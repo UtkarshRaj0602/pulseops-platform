@@ -8,6 +8,10 @@ The backend follows a production-oriented architecture with a clear separation b
 
 ---
 
+![alt text](image.png)
+
+---
+
 ## Tech Stack
 
 - Python 3.12+
