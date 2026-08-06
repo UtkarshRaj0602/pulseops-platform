@@ -101,3 +101,36 @@ module "eks" {
 
 }
 
+module "irsa" {
+
+  source = "./modules/irsa"
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  oidc_provider_arn = module.eks.oidc_provider_arn
+  oidc_provider     = module.eks.oidc_provider
+
+}
+
+module "helm" {
+
+  source = "./modules/helm"
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  cluster_name = module.eks.cluster_name
+
+  region = var.aws_region
+  vpc_id = module.vpc.vpc_id
+
+  alb_controller_role_arn   = module.irsa.alb_controller_role_arn
+  ebs_csi_role_arn          = module.irsa.ebs_csi_role_arn
+  external_secrets_role_arn = module.irsa.external_secrets_role_arn
+
+  depends_on = [
+    module.eks,
+    module.irsa
+  ]
+}

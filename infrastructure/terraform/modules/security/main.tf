@@ -146,3 +146,5 @@ resource "aws_vpc_security_group_egress_rule" "redis" {
 
   cidr_ipv4 = "0.0.0.0/0"
 }
+
+
