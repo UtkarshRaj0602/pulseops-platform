@@ -134,3 +134,22 @@ module "helm" {
     module.irsa
   ]
 }
+
+module "k8s_secrets" {
+
+  source = "./modules/k8s-secrets"
+
+  namespace = "pulseops"
+
+  aws_region = var.aws_region
+
+  database_secret_name = module.secrets.database_secret_name
+
+  database_secret_arn = module.secrets.database_secret_arn
+
+  depends_on = [
+    module.helm,
+    module.irsa
+  ]
+
+}
