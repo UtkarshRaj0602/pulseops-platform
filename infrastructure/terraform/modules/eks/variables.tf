@@ -33,3 +33,19 @@ variable "node_role_arn" {
 variable "node_security_group_id" {
   type = string
 }
+
+variable "node_instance_types" {
+  type = list(string)
+}
+
+variable "desired_size" {
+  type = number
+}
+
+variable "min_size" {
+  type = number
+}
+
+variable "max_size" {
+  type = number
+}

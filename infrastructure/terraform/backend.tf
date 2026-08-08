@@ -4,13 +4,13 @@ terraform {
 
     bucket = "pulseops-terraform-state"
 
-    key = "dev/terraform.tfstate"
+    key = "stage/terraform.tfstate"
 
     region = "ap-south-1"
 
     encrypt = true
 
-    dynamodb_table = "pulseops-terraform-lock"
+    # dynamodb_table = "pulseops-terraform-lock"
 
   }
 

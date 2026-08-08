@@ -1,15 +1,19 @@
 module "vpc" {
   source = "./modules/vpc"
 
-  project_name       = var.project_name
-  environment        = var.environment
+  project_name = var.project_name
+  environment  = var.environment
+
   vpc_cidr           = var.vpc_cidr
   availability_zones = var.availability_zones
+
+  public_subnets   = var.public_subnets
+  private_subnets  = var.private_subnets
+  database_subnets = var.database_subnets
 
   enable_nat_gateway = true
   single_nat_gateway = true
 }
-
 module "security" {
 
   source = "./modules/security"
@@ -87,7 +91,7 @@ module "eks" {
   project_name = var.project_name
   environment  = var.environment
 
-  cluster_version = "1.33"
+  cluster_version = var.cluster_version
 
   vpc_id = module.vpc.vpc_id
 
@@ -99,6 +103,10 @@ module "eks" {
 
   node_security_group_id = module.security.eks_node_security_group_id
 
+  desired_size        = var.desired_size
+  min_size            = var.min_size
+  max_size            = var.max_size
+  node_instance_types = var.node_instance_types
 }
 
 module "irsa" {
@@ -113,43 +121,92 @@ module "irsa" {
 
 }
 
-module "helm" {
+module "namespace" {
 
-  source = "./modules/helm"
+  source = "./modules/namespace"
+
+  namespace = var.namespace
+
+  project_name = var.project_name
+
+  environment = var.environment
+
+}
+
+# module "helm" {
+
+#   source = "./modules/helm"
+
+#   project_name = var.project_name
+#   environment  = var.environment
+
+#   cluster_name = module.eks.cluster_name
+
+#   region = var.aws_region
+#   vpc_id = module.vpc.vpc_id
+
+#   alb_controller_role_arn   = module.irsa.alb_controller_role_arn
+#   ebs_csi_role_arn          = module.irsa.ebs_csi_role_arn
+#   external_secrets_role_arn = module.irsa.external_secrets_role_arn
+
+#   depends_on = [
+#     module.eks,
+#     module.irsa
+#   ]
+# }
+
+# module "k8s_secrets" {
+
+#   source = "./modules/k8s-secrets"
+
+#   namespace = module.namespace.namespace
+
+#   aws_region = var.aws_region
+
+#   database_secret_name = module.secrets.database_secret_name
+
+#   database_secret_arn = module.secrets.database_secret_arn
+
+#   depends_on = [
+#     module.helm,
+#     module.irsa
+#   ]
+
+# }
+
+# module "configmap" {
+
+#   source = "./modules/configmap"
+
+#   namespace  = var.namespace
+#   environment = var.environment
+
+#   aws_region = var.aws_region
+
+#   db_host = module.rds.db_endpoint
+#   db_port = var.db_port
+#   db_name = var.db_name
+
+#   redis_host = module.redis.redis_endpoint
+#   redis_port = var.redis_port
+
+#   queue_name = module.sqs.queue_name
+
+#   log_level = var.log_level
+
+#   worker_poll_interval = var.worker_poll_interval
+
+#   depends_on = [
+#     module.namespace,
+#     module.rds,
+#     module.redis,
+#     module.sqs
+#   ]
+# }
+
+module "iam" {
+  source = "./modules/iam"
 
   project_name = var.project_name
   environment  = var.environment
-
-  cluster_name = module.eks.cluster_name
-
-  region = var.aws_region
-  vpc_id = module.vpc.vpc_id
-
-  alb_controller_role_arn   = module.irsa.alb_controller_role_arn
-  ebs_csi_role_arn          = module.irsa.ebs_csi_role_arn
-  external_secrets_role_arn = module.irsa.external_secrets_role_arn
-
-  depends_on = [
-    module.eks,
-    module.irsa
-  ]
-}
-
-module "k8s_secrets" {
-
-  source = "./modules/k8s-secrets"
-
-  namespace = "pulseops"
-
-  aws_region = var.aws_region
-
-  database_secret_name = module.secrets.database_secret_name
-
-  database_secret_arn = module.secrets.database_secret_arn
-
-  depends_on = [
-    module.helm,
-    module.irsa
-  ]
-
 }

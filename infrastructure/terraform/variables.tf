@@ -1,10 +1,14 @@
+# -----------------------------------------------------------------------------
+# General
+# -----------------------------------------------------------------------------
+
 variable "project_name" {
-  description = "Project Name"
+  description = "Project name"
   type        = string
 }
 
 variable "environment" {
-  description = "Deployment Environment"
+  description = "Deployment environment"
   type        = string
 }
 
@@ -13,38 +17,40 @@ variable "aws_region" {
   type        = string
 }
 
+# -----------------------------------------------------------------------------
+# Networking
+# -----------------------------------------------------------------------------
+
 variable "vpc_cidr" {
-  description = "Primary VPC CIDR"
-  type        = string
+  type = string
 }
 
 variable "availability_zones" {
-  description = "Availability Zones"
-  type        = list(string)
+  type = list(string)
 }
 
+variable "public_subnets" {
+  type = list(string)
+}
 
+variable "private_subnets" {
+  type = list(string)
+}
 
+variable "database_subnets" {
+  type = list(string)
+}
 
-
-
-
-
-
-
-
-#########EKS###########
+# -----------------------------------------------------------------------------
+# EKS
+# -----------------------------------------------------------------------------
 
 variable "cluster_version" {
   type = string
 }
 
-variable "instance_types" {
+variable "node_instance_types" {
   type = list(string)
-}
-
-variable "capacity_type" {
-  type = string
 }
 
 variable "desired_size" {
@@ -59,18 +65,57 @@ variable "max_size" {
   type = number
 }
 
-variable "disk_size" {
-  type = number
+variable "namespace" {
+  description = "Kubernetes namespace"
+  type        = string
 }
 
-variable "ami_type" {
+# -----------------------------------------------------------------------------
+# RDS
+# -----------------------------------------------------------------------------
+
+variable "db_name" {
   type = string
 }
 
-variable "cluster_endpoint_public_access" {
-  type = bool
+variable "db_username" {
+  type = string
 }
 
-variable "cluster_endpoint_private_access" {
-  type = bool
+variable "db_instance_class" {
+  type = string
+}
+
+variable "allocated_storage" {
+  type = number
+}
+
+variable "engine_version" {
+  type = string
+}
+
+# -----------------------------------------------------------------------------
+# Redis
+# -----------------------------------------------------------------------------
+
+variable "redis_node_type" {
+  type = string
+}
+
+variable "redis_engine_version" {
+  type = string
+}
+
+# -----------------------------------------------------------------------------
+# Logging
+# -----------------------------------------------------------------------------
+
+variable "log_level" {
+  type    = string
+  default = "INFO"
+}
+
+variable "worker_poll_interval" {
+  type    = number
+  default = 5
 }

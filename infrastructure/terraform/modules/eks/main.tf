@@ -1,7 +1,7 @@
 module "eks" {
 
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.31"
+  version = "~> 20.37"
 
   cluster_name    = local.cluster_name
   cluster_version = var.cluster_version
@@ -65,15 +65,13 @@ module "eks" {
 
       subnet_ids = var.private_subnets
 
-      instance_types = [
-        "t3a.small"
-      ]
+      instance_types = var.node_instance_types
 
       capacity_type = "ON_DEMAND"
 
-      desired_size = 1
-      min_size     = 1
-      max_size     = 2
+      desired_size = var.desired_size
+      min_size     = var.min_size
+      max_size     = var.max_size
 
       disk_size = 8
 
