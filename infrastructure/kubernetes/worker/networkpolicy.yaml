@@ -1,0 +1,59 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+
+metadata:
+  name: worker-network-policy
+  namespace: pulseops
+
+  labels:
+    app.kubernetes.io/name: worker
+    app.kubernetes.io/component: worker
+    app.kubernetes.io/part-of: pulseops-platform
+    app.kubernetes.io/managed-by: kubectl
+
+spec:
+
+  podSelector:
+    matchLabels:
+      app: worker
+
+  policyTypes:
+    - Egress
+
+  egress:
+
+    #
+    # DNS
+    #
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+
+      ports:
+        - protocol: UDP
+          port: 53
+
+        - protocol: TCP
+          port: 53
+
+    #
+    # HTTPS (AWS APIs)
+    #
+    - ports:
+        - protocol: TCP
+          port: 443
+
+    #
+    # PostgreSQL
+    #
+    - ports:
+        - protocol: TCP
+          port: 5432
+
+    #
+    # Redis
+    #
+    - ports:
+        - protocol: TCP
+          port: 6379

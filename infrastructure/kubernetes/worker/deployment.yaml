@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: worker
+  namespace: pulseops
+
+  labels:
+    app.kubernetes.io/name: worker
+    app.kubernetes.io/component: worker
+    app.kubernetes.io/part-of: pulseops-platform
+    app.kubernetes.io/managed-by: kubectl
+
+spec:
+  replicas: 1
+
+  strategy:
+    type: RollingUpdate
+
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+
+  selector:
+    matchLabels:
+      app: worker
+
+  template:
+
+    metadata:
+      labels:
+        app: worker
+
+        app.kubernetes.io/name: worker
+        app.kubernetes.io/component: worker
+        app.kubernetes.io/part-of: pulseops-platform
+
+    spec:
+
+      terminationGracePeriodSeconds: 30
+
+      securityContext:
+        runAsNonRoot: true
+
+      affinity:
+
+        podAntiAffinity:
+
+          preferredDuringSchedulingIgnoredDuringExecution:
+
+            - weight: 100
+
+              podAffinityTerm:
+
+                topologyKey: kubernetes.io/hostname
+
+                labelSelector:
+
+                  matchLabels:
+                    app: worker
+
+      containers:
+
+        - name: worker
+
+          image: 051826706795.dkr.ecr.ap-south-1.amazonaws.com/pulseops-stage-worker:latest
+
+          imagePullPolicy: Always
+
+          envFrom:
+
+            - configMapRef:
+                name: worker-config
+
+            - secretRef:
+                name: database_secret
+
+          resources:
+
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+
+            capabilities:
+              drop:
+                - ALL

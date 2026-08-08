@@ -1,0 +1,19 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+
+metadata:
+  name: frontend-pdb
+  namespace: pulseops
+
+  labels:
+    app.kubernetes.io/name: frontend
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: pulseops-platform
+    app.kubernetes.io/managed-by: kubectl
+
+spec:
+  minAvailable: 1
+
+  selector:
+    matchLabels:
+      app: frontend

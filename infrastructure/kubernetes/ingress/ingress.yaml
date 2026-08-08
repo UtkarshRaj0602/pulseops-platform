@@ -1,0 +1,130 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: pulseops-ingress
+  namespace: pulseops
+
+  labels:
+    app.kubernetes.io/name: ingress
+    app.kubernetes.io/component: networking
+    app.kubernetes.io/part-of: pulseops-platform
+    app.kubernetes.io/managed-by: kubectl
+
+  annotations:
+
+    #
+    # AWS Load Balancer Controller
+    #
+    kubernetes.io/ingress.class: alb
+
+    alb.ingress.kubernetes.io/scheme: internet-facing
+
+    alb.ingress.kubernetes.io/target-type: ip
+
+    alb.ingress.kubernetes.io/load-balancer-name: pulseops-stage-alb
+
+    alb.ingress.kubernetes.io/group.name: pulseops
+
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+
+    alb.ingress.kubernetes.io/healthcheck-port: traffic-port
+
+    alb.ingress.kubernetes.io/success-codes: "200"
+
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+
+spec:
+
+  ingressClassName: alb
+
+  rules:
+
+    - http:
+
+        paths:
+
+          #
+          # Frontend
+          #
+          - path: /
+
+            pathType: Prefix
+
+            backend:
+
+              service:
+
+                name: frontend
+
+                port:
+
+                  number: 80
+
+          #
+          # Backend API
+          #
+          - path: /api
+
+            pathType: Prefix
+
+            backend:
+
+              service:
+
+                name: backend
+
+                port:
+
+                  number: 80
+
+          #
+          # Health
+          #
+          - path: /health
+
+            pathType: Prefix
+
+            backend:
+
+              service:
+
+                name: backend
+
+                port:
+
+                  number: 80
+
+          #
+          # OpenAPI Docs
+          #
+          - path: /docs
+
+            pathType: Prefix
+
+            backend:
+
+              service:
+
+                name: backend
+
+                port:
+
+                  number: 80
+
+          #
+          # ReDoc
+          #
+          - path: /redoc
+
+            pathType: Prefix
+
+            backend:
+
+              service:
+
+                name: backend
+
+                port:
+
+                  number: 80

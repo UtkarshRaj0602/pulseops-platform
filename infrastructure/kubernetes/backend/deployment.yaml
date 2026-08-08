@@ -1,0 +1,133 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: backend
+  namespace: pulseops
+
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: pulseops-platform
+    app.kubernetes.io/version: v1
+    app.kubernetes.io/managed-by: kubectl
+
+spec:
+  replicas: 2
+
+  strategy:
+    type: RollingUpdate
+
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+
+  selector:
+    matchLabels:
+      app: backend
+
+  template:
+
+    metadata:
+
+      labels:
+        app: backend
+
+        app.kubernetes.io/name: backend
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: pulseops-platform
+
+    spec:
+
+      terminationGracePeriodSeconds: 30
+
+      securityContext:
+        runAsNonRoot: true
+        allowPrivilegeEscalation: false
+
+      affinity:
+
+        podAntiAffinity:
+
+          preferredDuringSchedulingIgnoredDuringExecution:
+
+            - weight: 100
+
+              podAffinityTerm:
+
+                topologyKey: kubernetes.io/hostname
+
+                labelSelector:
+
+                  matchLabels:
+                    app: backend
+
+      containers:
+
+        - name: backend
+
+          image: 051826706795.dkr.ecr.ap-south-1.amazonaws.com/pulseops-stage-backend:latest
+
+          imagePullPolicy: Always
+
+          ports:
+
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+
+          envFrom:
+
+            - configMapRef:
+                name: backend-config
+
+            - secretRef:
+                name: database_secret
+
+          resources:
+
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          startupProbe:
+
+            httpGet:
+              path: /health
+              port: http
+
+            failureThreshold: 30
+            periodSeconds: 10
+
+          readinessProbe:
+
+            httpGet:
+              path: /health
+              port: http
+
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          livenessProbe:
+
+            httpGet:
+              path: /health
+              port: http
+
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL

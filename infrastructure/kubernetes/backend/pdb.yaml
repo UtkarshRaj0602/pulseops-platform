@@ -1,0 +1,19 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+
+metadata:
+  name: backend-pdb
+  namespace: pulseops
+
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: pulseops-platform
+    app.kubernetes.io/managed-by: kubectl
+
+spec:
+  minAvailable: 1
+
+  selector:
+    matchLabels:
+      app: backend
