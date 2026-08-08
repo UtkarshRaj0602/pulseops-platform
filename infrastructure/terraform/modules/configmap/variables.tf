@@ -43,6 +43,11 @@ variable "queue_name" {
   type        = string
 }
 
+variable "queue_url" {
+  description = "SQS Queue URL"
+  type        = string
+}
+
 variable "log_level" {
   description = "Application log level"
   type        = string

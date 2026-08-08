@@ -192,6 +192,8 @@ module "namespace" {
 
 #   queue_name = module.sqs.queue_name
 
+#   queue_url = module.sqs.queue_url
+
 #   log_level = var.log_level
 
 #   worker_poll_interval = var.worker_poll_interval
