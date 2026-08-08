@@ -1,11 +1,17 @@
-output "backend_repository_url" {
-  value = module.ecr.backend_repository_url
+output "repository_urls" {
+  description = "ECR repository URLs"
+
+  value = {
+    for repo_name, repo in aws_ecr_repository.repositories :
+    repo_name => repo.repository_url
+  }
 }
 
-output "frontend_repository_url" {
-  value = module.ecr.frontend_repository_url
-}
+output "repository_names" {
+  description = "ECR repository names"
 
-output "worker_repository_url" {
-  value = module.ecr.worker_repository_url
+  value = {
+    for repo_name, repo in aws_ecr_repository.repositories :
+    repo_name => repo.name
+  }
 }
