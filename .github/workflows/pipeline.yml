@@ -126,7 +126,7 @@ jobs:
     # ==========================================
       - name: Wait for EKS
         run: |
-          CLUSTER_NAME=$(terraform output -raw eks_cluster_name)
+          CLUSTER_NAME=$(terraform output -raw cluster_name)
 
           echo "Waiting for EKS cluster: $CLUSTER_NAME"
 
@@ -176,7 +176,7 @@ jobs:
       - name: Get Terraform Outputs
         id: terraform-output
         run: |
-          CLUSTER_NAME=$(terraform output -raw eks_cluster_name)
+          CLUSTER_NAME=$(terraform output -raw cluster_name)
 
           if [ -z "$CLUSTER_NAME" ]; then
             echo "EKS cluster name is empty"
