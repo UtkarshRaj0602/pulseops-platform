@@ -154,21 +154,104 @@ jobs:
 
           done
 
+          # ==========================================
+      # CONFIGURE KUBECTL
+      # ==========================================
+
+      - name: Install kubectl
+        run: |
+          KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+
+          echo "Installing kubectl ${KUBECTL_VERSION}"
+
+          curl -LO \
+            "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/kubectl
+
+      - name: Configure kubectl
+        run: |
+          CLUSTER_NAME=$(terraform output -raw cluster_name)
+
+          aws eks update-kubeconfig \
+            --region "$AWS_REGION" \
+            --name "$CLUSTER_NAME"
+
+      - name: Verify Kubernetes Access
+        run: |
+          kubectl cluster-info
+
+          
     # ==========================================
     # PHASE 2 - KUBERNETES / HELM
     # ==========================================
       
-      - name: Terraform Full Plan
+      # - name: Terraform Full Plan
+      #   run: |
+      #     terraform plan \
+      #       -var-file="environments/stage/terraform.tfvars" \
+      #       -out=stage-full.tfplan
+
+      # - name: Terraform Full Apply
+      #   run: |
+      #     terraform apply \
+      #       -auto-approve \
+      #       stage-full.tfplan
+
+    # ==========================================
+      # PHASE 2A - HELM COMPONENTS
+      # ==========================================
+
+      - name: Terraform Helm Plan
         run: |
           terraform plan \
             -var-file="environments/stage/terraform.tfvars" \
-            -out=stage-full.tfplan
+            -target=module.helm \
+            -out=stage-helm.tfplan
 
-      - name: Terraform Full Apply
+      - name: Terraform Helm Apply
         run: |
           terraform apply \
             -auto-approve \
-            stage-full.tfplan
+            stage-helm.tfplan
+
+      # ==========================================
+      # PHASE 2B - KUBERNETES RESOURCES
+      # ==========================================
+
+      - name: Verify External Secrets CRDs
+        run: |
+          echo "Checking External Secrets CRDs..."
+
+          for i in {1..30}; do
+            if kubectl get crd secretstores.external-secrets.io >/dev/null 2>&1 && \
+               kubectl get crd externalsecrets.external-secrets.io >/dev/null 2>&1; then
+              echo "External Secrets CRDs are available."
+              break
+            fi
+
+            if [ "$i" -eq 30 ]; then
+              echo "External Secrets CRDs were not created."
+              kubectl get crd | grep external-secrets || true
+              exit 1
+            fi
+
+            echo "Waiting for External Secrets CRDs... attempt $i/30"
+            sleep 10
+          done
+
+      - name: Terraform Kubernetes Plan
+        run: |
+          terraform plan \
+            -var-file="environments/stage/terraform.tfvars" \
+            -out=stage-kubernetes.tfplan
+
+      - name: Terraform Kubernetes Apply
+        run: |
+          terraform apply \
+            -auto-approve \
+            stage-kubernetes.tfplan
 
     # ==========================================
     # OUTPUTS
