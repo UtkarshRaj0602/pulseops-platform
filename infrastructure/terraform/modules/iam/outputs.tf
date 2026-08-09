@@ -17,3 +17,13 @@ output "eks_node_role_name" {
   description = "Name of the EKS Node Group IAM Role"
   value       = aws_iam_role.eks_node.name
 }
+
+output "github_actions_role_arn" {
+  description = "ARN of the GitHub Actions IAM Role"
+  value       = aws_iam_role.github_actions.arn
+}
+
+output "github_actions_role_name" {
+  description = "Name of the GitHub Actions IAM Role"
+  value       = aws_iam_role.github_actions.name
+}

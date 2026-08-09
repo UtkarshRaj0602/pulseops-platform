@@ -148,3 +148,12 @@ output "database_secret_arn" {
   description = "Database Secret ARN"
   value       = module.secrets.database_secret_arn
 }
+
+###########################################################
+# IAM
+###########################################################
+
+output "github_actions_role_arn" {
+  description = "GitHub Actions IAM Role ARN"
+  value       = module.iam.github_actions_role_arn
+}

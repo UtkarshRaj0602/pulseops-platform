@@ -1,0 +1,599 @@
+name: PulseOps Pipeline
+
+on:
+  push:
+    branches:
+      - stage
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-south-1
+
+
+jobs:
+
+  # =========================================================
+  # TERRAFORM
+  # =========================================================
+
+  terraform:
+    name: Terraform Plan & Apply
+    runs-on: ubuntu-latest
+
+    outputs:
+      cluster_name: ${{ steps.terraform-output.outputs.cluster_name }}
+
+    defaults:
+      run:
+        working-directory: infrastructure/terraform
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify AWS identity
+        run: |
+          aws sts get-caller-identity
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Format Check
+        run: |
+          terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: |
+          terraform init
+
+      - name: Terraform Validate
+        run: |
+          terraform validate
+
+      - name: Terraform Plan
+        run: |
+          terraform plan \
+            -var-file="environments/stage/terraform.tfvars" \
+            -out=stage.tfplan
+
+      - name: Terraform Apply
+        run: |
+          terraform apply \
+            -auto-approve \
+            stage.tfplan
+
+      - name: Get Terraform Outputs
+        id: terraform-output
+        run: |
+          CLUSTER_NAME=$(terraform output -raw eks_cluster_name)
+
+          if [ -z "$CLUSTER_NAME" ]; then
+            echo "EKS cluster name is empty"
+            exit 1
+          fi
+
+          echo "EKS Cluster: $CLUSTER_NAME"
+          echo "cluster_name=$CLUSTER_NAME" >> "$GITHUB_OUTPUT"
+
+
+  # =========================================================
+  # BACKEND
+  # =========================================================
+
+  backend:
+    name: Backend Validation
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend/api
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Python syntax check
+        run: |
+          python -m compileall app
+
+
+  # =========================================================
+  # WORKER
+  # =========================================================
+
+  worker:
+    name: Worker Validation
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend/worker
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Python syntax check
+        run: |
+          python -m compileall .
+
+
+  # =========================================================
+  # FRONTEND
+  # =========================================================
+
+  frontend:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci
+
+      - name: Build frontend
+        run: |
+          npm run build
+
+
+  # =========================================================
+  # DOCKER & ECR
+  # =========================================================
+
+  docker:
+    name: Docker Build & Push
+    runs-on: ubuntu-latest
+
+    needs:
+      - terraform
+      - backend
+      - worker
+      - frontend
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify AWS identity
+        run: |
+          aws sts get-caller-identity
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set ECR Registry
+        run: |
+          echo "ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> "$GITHUB_ENV"
+
+      # - name: Build Backend Image
+      #   run: |
+      #     docker build \
+      #       -t pulseops-backend-api:$GITHUB_SHA \
+      #       ./backend/api
+
+      # - name: Build Worker Image
+      #   run: |
+      #     docker build \
+      #       -t pulseops-backend-worker:$GITHUB_SHA \
+      #       ./backend/worker
+
+      # - name: Build Frontend Image
+      #   run: |
+      #     docker build \
+      #       -t pulseops-frontend:$GITHUB_SHA \
+      #       ./frontend
+
+      # - name: Tag Backend Image
+      #   run: |
+      #     docker tag \
+      #       pulseops-backend-api:$GITHUB_SHA \
+      #       $ECR_REGISTRY/pulseops-backend:$GITHUB_SHA
+
+      # - name: Tag Worker Image
+      #   run: |
+      #     docker tag \
+      #       pulseops-backend-worker:$GITHUB_SHA \
+      #       $ECR_REGISTRY/pulseops-worker:$GITHUB_SHA
+
+      # - name: Tag Frontend Image
+      #   run: |
+      #     docker tag \
+      #       pulseops-frontend:$GITHUB_SHA \
+      #       $ECR_REGISTRY/pulseops-frontend:$GITHUB_SHA
+
+      # - name: Push Backend Image
+      #   run: |
+      #     docker push \
+      #       $ECR_REGISTRY/pulseops-backend:$GITHUB_SHA
+
+      # - name: Push Worker Image
+      #   run: |
+      #     docker push \
+      #       $ECR_REGISTRY/pulseops-worker:$GITHUB_SHA
+
+      # - name: Push Frontend Image
+      #   run: |
+      #     docker push \
+      #       $ECR_REGISTRY/pulseops-frontend:$GITHUB_SHA
+
+      - name: Build Backend Image
+        run: |
+          docker build \
+            -t "${ECR_REGISTRY}/pulseops-backend:${GITHUB_SHA}" \
+            ./backend/api
+
+      - name: Build Worker Image
+        run: |
+          docker build \
+            -t "${ECR_REGISTRY}/pulseops-worker:${GITHUB_SHA}" \
+            ./backend/worker
+
+      - name: Build Frontend Image
+        run: |
+          docker build \
+            -t "${ECR_REGISTRY}/pulseops-frontend:${GITHUB_SHA}" \
+            ./frontend
+
+      - name: Push Backend Image
+        run: |
+          docker push \
+            "${ECR_REGISTRY}/pulseops-backend:${GITHUB_SHA}"
+
+      - name: Push Worker Image
+        run: |
+          docker push \
+            "${ECR_REGISTRY}/pulseops-worker:${GITHUB_SHA}"
+
+      - name: Push Frontend Image
+        run: |
+          docker push \
+            "${ECR_REGISTRY}/pulseops-frontend:${GITHUB_SHA}"
+
+      - name: Display Image References
+        run: |
+          echo "Backend:"
+          echo "$ECR_REGISTRY/pulseops-backend:$GITHUB_SHA"
+
+          echo "Worker:"
+          echo "$ECR_REGISTRY/pulseops-worker:$GITHUB_SHA"
+
+          echo "Frontend:"
+          echo "$ECR_REGISTRY/pulseops-frontend:$GITHUB_SHA"
+
+  # =========================================================
+  # EKS DEPLOYMENT
+  # =========================================================
+
+  eks:
+    name: Deploy to EKS
+    runs-on: ubuntu-latest
+
+    needs:
+      - terraform
+      - docker
+
+    steps:
+
+      # -------------------------------------------------------
+      # CHECKOUT
+      # -------------------------------------------------------
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+
+      # -------------------------------------------------------
+      # AWS AUTHENTICATION
+      # -------------------------------------------------------
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+
+      # -------------------------------------------------------
+      # VERIFY AWS
+      # -------------------------------------------------------
+
+      - name: Verify AWS identity
+        run: |
+          aws sts get-caller-identity
+
+
+      # -------------------------------------------------------
+      # GET EKS CLUSTER NAME
+      # -------------------------------------------------------
+
+      - name: Set EKS cluster name
+        run: |
+          echo "EKS_CLUSTER_NAME=${{ needs.terraform.outputs.cluster_name }}" >> "$GITHUB_ENV"
+
+      - name: Verify EKS cluster
+        run: |
+          if [ -z "$EKS_CLUSTER_NAME" ]; then
+            echo "EKS_CLUSTER_NAME is empty"
+            exit 1
+          fi
+
+          echo "EKS Cluster: $EKS_CLUSTER_NAME"
+
+          aws eks describe-cluster \
+            --name "$EKS_CLUSTER_NAME" \
+            --region "$AWS_REGION" \
+            --query "cluster.{name:name,status:status,version:version}" \
+            --output table
+
+
+      # -------------------------------------------------------
+      # INSTALL KUBECTL
+      # -------------------------------------------------------
+
+      - name: Install kubectl
+        run: |
+          KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+
+          echo "Installing kubectl ${KUBECTL_VERSION}"
+
+          curl -LO \
+            "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+
+          chmod +x kubectl
+
+          sudo mv kubectl /usr/local/bin/kubectl
+
+      - name: Verify kubectl
+        run: |
+          kubectl version --client
+
+
+      # -------------------------------------------------------
+      # CONFIGURE KUBECTL FOR EKS
+      # -------------------------------------------------------
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig \
+            --region "$AWS_REGION" \
+            --name "$EKS_CLUSTER_NAME"
+
+
+      # -------------------------------------------------------
+      # VERIFY EKS ACCESS
+      # -------------------------------------------------------
+
+      - name: Verify Kubernetes access
+        run: |
+          kubectl cluster-info
+
+      - name: Get Kubernetes nodes
+        run: |
+          kubectl get nodes -o wide
+
+
+      # -------------------------------------------------------
+      # APPLY KUBERNETES MANIFESTS
+      # -------------------------------------------------------
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply \
+            --recursive \
+            -f infrastructure/kubernetes/
+
+
+      # -------------------------------------------------------
+      # UPDATE BACKEND IMAGE
+      # -------------------------------------------------------
+
+      - name: Update Backend Image
+        run: |
+          kubectl set image \
+            "deployment/backend" \
+            "backend=051826706795.dkr.ecr.ap-south-1.amazonaws.com/pulseops-backend:${GITHUB_SHA}" \
+            --namespace=pulseops
+
+
+      # -------------------------------------------------------
+      # UPDATE WORKER IMAGE
+      # -------------------------------------------------------
+
+      - name: Update Worker Image
+        run: |
+          kubectl set image \
+            "deployment/worker" \
+            "worker=051826706795.dkr.ecr.ap-south-1.amazonaws.com/pulseops-worker:${GITHUB_SHA}" \
+            --namespace=pulseops
+
+
+      # -------------------------------------------------------
+      # UPDATE FRONTEND IMAGE
+      # -------------------------------------------------------
+
+      - name: Update Frontend Image
+        run: |
+          kubectl set image \
+            "deployment/frontend" \
+            "frontend=051826706795.dkr.ecr.ap-south-1.amazonaws.com/pulseops-frontend:${GITHUB_SHA}" \
+            --namespace=pulseops
+
+
+      # -------------------------------------------------------
+      # VERIFY BACKEND ROLLOUT
+      # -------------------------------------------------------
+
+      - name: Verify Backend Rollout
+        run: |
+          kubectl rollout status \
+            deployment/backend \
+            -n pulseops \
+            --timeout=5m
+
+
+      # -------------------------------------------------------
+      # VERIFY WORKER ROLLOUT
+      # -------------------------------------------------------
+
+      - name: Verify Worker Rollout
+        run: |
+          kubectl rollout status \
+            deployment/worker \
+            -n pulseops \
+            --timeout=5m
+
+
+      # -------------------------------------------------------
+      # VERIFY FRONTEND ROLLOUT
+      # -------------------------------------------------------
+
+      - name: Verify Frontend Rollout
+        run: |
+          kubectl rollout status \
+            deployment/frontend \
+            -n pulseops \
+            --timeout=5m
+
+
+      # -------------------------------------------------------
+      # VERIFY PODS
+      # -------------------------------------------------------
+
+      - name: Verify Pods
+        run: |
+          kubectl get pods \
+            -n pulseops \
+            -o wide
+
+
+      # -------------------------------------------------------
+      # VERIFY SERVICES
+      # -------------------------------------------------------
+
+      - name: Verify Services
+        run: |
+          kubectl get svc \
+            -n pulseops
+
+
+      # -------------------------------------------------------
+      # VERIFY INGRESS
+      # -------------------------------------------------------
+
+      - name: Verify Ingress
+        run: |
+          kubectl get ingress \
+            -n pulseops
+
+
+      # -------------------------------------------------------
+      # FAILURE DIAGNOSTICS
+      # -------------------------------------------------------
+
+      - name: Collect Kubernetes diagnostics
+        if: failure()
+        run: |
+          echo "========== PODS =========="
+          kubectl get pods -n pulseops -o wide || true
+
+          echo "========== DEPLOYMENTS =========="
+          kubectl get deployments -n pulseops || true
+
+          echo "========== SERVICES =========="
+          kubectl get svc -n pulseops || true
+
+          echo "========== INGRESS =========="
+          kubectl get ingress -n pulseops || true
+
+          echo "========== EVENTS =========="
+          kubectl get events \
+            -n pulseops \
+            --sort-by=.lastTimestamp || true
+
+          echo "========== BACKEND DESCRIPTION =========="
+          kubectl describe deployment backend \
+            -n pulseops || true
+
+          echo "========== WORKER DESCRIPTION =========="
+          kubectl describe deployment worker \
+            -n pulseops || true
+
+          echo "========== FRONTEND DESCRIPTION =========="
+          kubectl describe deployment frontend \
+            -n pulseops || true
+
+          echo "========== BACKEND LOGS =========="
+          kubectl logs \
+            deployment/backend \
+            -n pulseops \
+            --all-containers=true \
+            --tail=100 || true
+
+          echo "========== WORKER LOGS =========="
+          kubectl logs \
+            deployment/worker \
+            -n pulseops \
+            --all-containers=true \
+            --tail=100 || true
+
+          echo "========== FRONTEND LOGS =========="
+          kubectl logs \
+            deployment/frontend \
+            -n pulseops \
+            --all-containers=true \
+            --tail=100 || true
