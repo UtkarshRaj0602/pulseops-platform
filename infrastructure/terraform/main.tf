@@ -128,92 +128,92 @@ module "irsa" {
 
 }
 
-# module "namespace" {
+module "namespace" {
 
-#   source = "./modules/namespace"
+  source = "./modules/namespace"
 
-#   namespace = var.namespace
+  namespace = var.namespace
 
-#   project_name = var.project_name
+  project_name = var.project_name
 
-#   environment = var.environment
+  environment = var.environment
 
-# }
+}
 
 ####################
 # Phase-2 below -- #
 ####################
 
 
-# module "helm" {
+module "helm" {
 
-#   source = "./modules/helm"
+  source = "./modules/helm"
 
-#   project_name = var.project_name
-#   environment  = var.environment
+  project_name = var.project_name
+  environment  = var.environment
 
-#   cluster_name = module.eks.cluster_name
+  cluster_name = module.eks.cluster_name
 
-#   region = var.aws_region
-#   vpc_id = module.vpc.vpc_id
+  region = var.aws_region
+  vpc_id = module.vpc.vpc_id
 
-#   alb_controller_role_arn   = module.irsa.alb_controller_role_arn
-#   ebs_csi_role_arn          = module.irsa.ebs_csi_role_arn
-#   external_secrets_role_arn = module.irsa.external_secrets_role_arn
+  alb_controller_role_arn   = module.irsa.alb_controller_role_arn
+  ebs_csi_role_arn          = module.irsa.ebs_csi_role_arn
+  external_secrets_role_arn = module.irsa.external_secrets_role_arn
 
-#   depends_on = [
-#     module.eks,
-#     module.irsa
-#   ]
-# }
+  depends_on = [
+    module.eks,
+    module.irsa
+  ]
+}
 
-# module "k8s_secrets" {
+module "k8s_secrets" {
 
-#   source = "./modules/k8s-secrets"
+  source = "./modules/k8s-secrets"
 
-#   namespace = module.namespace.namespace
+  namespace = module.namespace.namespace
 
-#   aws_region = var.aws_region
+  aws_region = var.aws_region
 
-#   database_secret_name = module.secrets.database_secret_name
+  database_secret_name = module.secrets.database_secret_name
 
-#   database_secret_arn = module.secrets.database_secret_arn
+  database_secret_arn = module.secrets.database_secret_arn
 
-#   depends_on = [
-#     module.helm,
-#     module.irsa
-#   ]
+  depends_on = [
+    module.helm,
+    module.irsa
+  ]
 
-# }
+}
 
-# module "configmap" {
+module "configmap" {
 
-#   source = "./modules/configmap"
+  source = "./modules/configmap"
 
-#   namespace   = var.namespace
-#   environment = var.environment
+  namespace   = var.namespace
+  environment = var.environment
 
-#   aws_region = var.aws_region
+  aws_region = var.aws_region
 
-#   db_host = module.rds.db_endpoint
-#   db_port = var.db_port
-#   db_name = var.db_name
+  db_host = module.rds.db_endpoint
+  db_port = var.db_port
+  db_name = var.db_name
 
-#   redis_host = module.redis.redis_endpoint
-#   redis_port = var.redis_port
+  redis_host = module.redis.redis_endpoint
+  redis_port = var.redis_port
 
-#   queue_name = module.sqs.queue_name
+  queue_name = module.sqs.queue_name
 
-#   queue_url = module.sqs.queue_url
+  queue_url = module.sqs.queue_url
 
-#   log_level = var.log_level
+  log_level = var.log_level
 
-#   worker_poll_interval = var.worker_poll_interval
+  worker_poll_interval = var.worker_poll_interval
 
-#   depends_on = [
-#     module.namespace,
-#     module.rds,
-#     module.redis,
-#     module.sqs
-#   ]
-# }
+  depends_on = [
+    module.namespace,
+    module.rds,
+    module.redis,
+    module.sqs
+  ]
+}
