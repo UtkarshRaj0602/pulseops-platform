@@ -56,6 +56,6 @@ variable "ebs_csi_role_arn" {
 }
 
 variable "github_actions_role_arn" {
-  description = "IAM role ARN used by GitHub Actions to access EKS"
+  description = "ARN of the externally managed GitHub Actions IAM role"
   type        = string
 }

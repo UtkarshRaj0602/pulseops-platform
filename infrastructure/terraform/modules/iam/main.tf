@@ -28,34 +28,34 @@ resource "aws_iam_role" "eks_node" {
 
 }
 
-resource "aws_iam_role" "github_actions" {
+# resource "aws_iam_role" "github_actions" {
 
-  name = "${local.name_prefix}-github-actions-role"
+#   name = "${local.name_prefix}-github-actions-role"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17"
 
-    Statement = [
-      {
-        Effect = "Allow"
+#     Statement = [
+#       {
+#         Effect = "Allow"
 
-        Principal = {
-          Federated = "arn:aws:iam::051826706795:oidc-provider/token.actions.githubusercontent.com"
-        }
+#         Principal = {
+#           Federated = "arn:aws:iam::051826706795:oidc-provider/token.actions.githubusercontent.com"
+#         }
 
-        Action = "sts:AssumeRoleWithWebIdentity"
+#         Action = "sts:AssumeRoleWithWebIdentity"
 
-        Condition = {
-          StringEquals = {
-            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com",
+#         Condition = {
+#           StringEquals = {
+#             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com",
 
-            "token.actions.githubusercontent.com:sub" = "repo:UtkarshRaj0602@65725785/pulseops-platform@1321276675:ref:refs/heads/stage"
-          }
-        }
-      }
-    ]
-  })
-}
+#             "token.actions.githubusercontent.com:sub" = "repo:UtkarshRaj0602@65725785/pulseops-platform@1321276675:ref:refs/heads/stage"
+#           }
+#         }
+#       }
+#     ]
+#   })
+# }
 
 #   tags = merge(
 #     local.common_tags,

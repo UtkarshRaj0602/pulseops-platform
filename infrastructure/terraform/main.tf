@@ -111,7 +111,7 @@ module "eks" {
   node_security_group_id = module.security.eks_node_security_group_id
 
   ebs_csi_role_arn        = module.iam.ebs_csi_role_arn
-  github_actions_role_arn = module.iam.github_actions_role_arn
+  github_actions_role_arn = var.github_actions_role_arn
 
   desired_size        = var.desired_size
   min_size            = var.min_size
@@ -170,54 +170,54 @@ module "helm" {
   ]
 }
 
-module "k8s_secrets" {
+# module "k8s_secrets" {
 
-  source = "./modules/k8s-secrets"
+#   source = "./modules/k8s-secrets"
 
-  namespace = module.namespace.namespace
+#   namespace = module.namespace.namespace
 
-  aws_region = var.aws_region
+#   aws_region = var.aws_region
 
-  database_secret_name = module.secrets.database_secret_name
+#   database_secret_name = module.secrets.database_secret_name
 
-  database_secret_arn = module.secrets.database_secret_arn
+#   database_secret_arn = module.secrets.database_secret_arn
 
-  depends_on = [
-    module.helm,
-    module.irsa,
-    module.eks
-  ]
+#   depends_on = [
+#     module.helm,
+#     module.irsa,
+#     module.eks
+#   ]
 
-}
+# }
 
-module "configmap" {
+# module "configmap" {
 
-  source = "./modules/configmap"
+#   source = "./modules/configmap"
 
-  namespace   = var.namespace
-  environment = var.environment
+#   namespace   = var.namespace
+#   environment = var.environment
 
-  aws_region = var.aws_region
+#   aws_region = var.aws_region
 
-  db_host = module.rds.db_endpoint
-  db_port = var.db_port
-  db_name = var.db_name
+#   db_host = module.rds.db_endpoint
+#   db_port = var.db_port
+#   db_name = var.db_name
 
-  redis_host = module.redis.redis_endpoint
-  redis_port = var.redis_port
+#   redis_host = module.redis.redis_endpoint
+#   redis_port = var.redis_port
 
-  queue_name = module.sqs.queue_name
+#   queue_name = module.sqs.queue_name
 
-  queue_url = module.sqs.queue_url
+#   queue_url = module.sqs.queue_url
 
-  log_level = var.log_level
+#   log_level = var.log_level
 
-  worker_poll_interval = var.worker_poll_interval
+#   worker_poll_interval = var.worker_poll_interval
 
-  depends_on = [
-    module.namespace,
-    module.rds,
-    module.redis,
-    module.sqs
-  ]
-}
+#   depends_on = [
+#     module.namespace,
+#     module.rds,
+#     module.redis,
+#     module.sqs
+#   ]
+# }

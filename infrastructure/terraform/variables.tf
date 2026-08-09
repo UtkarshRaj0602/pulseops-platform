@@ -127,3 +127,12 @@ variable "worker_poll_interval" {
   type    = number
   default = 5
 }
+
+# -----------------------------------------------------------------------------
+# IAM
+# -----------------------------------------------------------------------------
+
+variable "github_actions_role_arn" {
+  description = "ARN of the externally managed GitHub Actions IAM role"
+  type        = string
+}
