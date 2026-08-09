@@ -146,6 +146,22 @@ jobs:
         run: |
           terraform validate
 
+
+######################################################
+
+      - name: Verify Terraform Node Scaling Variables
+        run: |
+          echo "========== STAGE TFVARS =========="
+          grep -E '^(desired_size|min_size|max_size)' \
+            environments/stage/terraform.tfvars
+
+          echo ""
+          echo "========== TERRAFORM VARIABLE VALUES =========="
+          terraform plan \
+            -var-file="environments/stage/terraform.tfvars" \
+            -target='module.eks' \
+            -no-color | grep -A 15 -B 5 'aws_eks_node_group'
+            
     # ==========================================
     # PHASE 1 - AWS INFRASTRUCTURE
     # ==========================================
