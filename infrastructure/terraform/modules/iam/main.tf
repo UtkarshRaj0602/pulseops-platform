@@ -47,11 +47,9 @@ resource "aws_iam_role" "github_actions" {
 
         Condition = {
           StringEquals = {
-            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          }
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com",
 
-          StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:UtkarshRaj0602/pulseops-platform:ref:refs/heads/stage"
+            "token.actions.githubusercontent.com:sub" = "repo:UtkarshRaj0602@65725785/pulseops-platform@1321276675:ref:refs/heads/stage"
           }
         }
       }
