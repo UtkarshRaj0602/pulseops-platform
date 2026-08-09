@@ -183,7 +183,8 @@ module "k8s_secrets" {
 
   depends_on = [
     module.helm,
-    module.irsa
+    module.irsa,
+    module.eks
   ]
 
 }

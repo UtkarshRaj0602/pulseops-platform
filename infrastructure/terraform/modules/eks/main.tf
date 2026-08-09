@@ -32,11 +32,6 @@ module "eks" {
   ####################################################
 
   cluster_addons = {
-
-    eks-pod-identity-agent = {
-      most_recent = true
-    }
-
     coredns = {
       most_recent = true
     }
@@ -46,6 +41,10 @@ module "eks" {
     }
 
     vpc-cni = {
+      most_recent = true
+    }
+
+    eks-pod-identity-agent = {
       most_recent = true
     }
 
