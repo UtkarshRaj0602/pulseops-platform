@@ -8,15 +8,15 @@ resource "aws_iam_role" "alb_controller" {
 
 }
 
-resource "aws_iam_role" "ebs_csi" {
+# resource "aws_iam_role" "ebs_csi" {
 
-  name = "${local.name_prefix}-ebs-csi-role"
+#   name = "${local.name_prefix}-ebs-csi-role"
 
-  assume_role_policy = data.aws_iam_policy_document.ebs_csi_assume_role.json
+#   assume_role_policy = data.aws_iam_policy_document.ebs_csi_assume_role.json
 
-  tags = local.common_tags
+#   tags = local.common_tags
 
-}
+# }
 
 resource "aws_iam_role" "external_secrets" {
 

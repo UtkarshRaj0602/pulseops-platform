@@ -6,13 +6,13 @@ resource "aws_iam_role_policy_attachment" "alb_controller" {
 
 }
 
-resource "aws_iam_role_policy_attachment" "ebs_csi" {
+# resource "aws_iam_role_policy_attachment" "ebs_csi" {
 
-  role = aws_iam_role.ebs_csi.name
+#   role = aws_iam_role.ebs_csi.name
 
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+#   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
 
-}
+# }
 
 resource "aws_iam_role_policy_attachment" "external_secrets" {
 

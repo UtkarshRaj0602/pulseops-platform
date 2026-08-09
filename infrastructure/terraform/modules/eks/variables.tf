@@ -51,6 +51,6 @@ variable "max_size" {
 }
 
 variable "ebs_csi_role_arn" {
-  description = "IAM role ARN for the EBS CSI driver"
+  description = "IAM role ARN used by the AWS EBS CSI driver through EKS Pod Identity"
   type        = string
 }

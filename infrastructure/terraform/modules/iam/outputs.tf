@@ -27,3 +27,9 @@ output "eks_node_role_name" {
 #   description = "Name of the GitHub Actions IAM Role"
 #   value       = aws_iam_role.github_actions.name
 # }
+
+
+output "ebs_csi_role_arn" {
+
+  value = aws_iam_role.ebs_csi.arn
+}

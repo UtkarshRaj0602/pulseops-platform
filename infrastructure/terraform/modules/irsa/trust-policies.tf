@@ -42,33 +42,18 @@ data "aws_iam_policy_document" "ebs_csi_assume_role" {
     effect = "Allow"
 
     actions = [
-      "sts:AssumeRoleWithWebIdentity"
+      "sts:AssumeRole",
+      "sts:TagSession"
     ]
 
     principals {
-
-      type = "Federated"
+      type = "Service"
 
       identifiers = [
-        var.oidc_provider_arn
+        "pods.eks.amazonaws.com"
       ]
-
     }
-
-    condition {
-
-      test = "StringEquals"
-
-      variable = "${replace(var.oidc_provider, "https://", "")}:sub"
-
-      values = [
-        "system:serviceaccount:kube-system:ebs-csi-controller-sa"
-      ]
-
-    }
-
   }
-
 }
 
 data "aws_iam_policy_document" "external_secrets_assume_role" {

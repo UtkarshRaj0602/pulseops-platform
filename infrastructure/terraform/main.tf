@@ -110,7 +110,7 @@ module "eks" {
 
   node_security_group_id = module.security.eks_node_security_group_id
 
-  ebs_csi_role_arn = module.irsa.ebs_csi_role_arn
+  ebs_csi_role_arn = module.iam.ebs_csi_role_arn
 
   desired_size        = var.desired_size
   min_size            = var.min_size
@@ -159,8 +159,8 @@ module "helm" {
   region = var.aws_region
   vpc_id = module.vpc.vpc_id
 
-  alb_controller_role_arn   = module.irsa.alb_controller_role_arn
-  ebs_csi_role_arn          = module.irsa.ebs_csi_role_arn
+  alb_controller_role_arn = module.irsa.alb_controller_role_arn
+  # ebs_csi_role_arn          = module.irsa.ebs_csi_role_arn
   external_secrets_role_arn = module.irsa.external_secrets_role_arn
 
   depends_on = [

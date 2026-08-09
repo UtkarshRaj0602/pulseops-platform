@@ -33,6 +33,10 @@ module "eks" {
 
   cluster_addons = {
 
+    eks-pod-identity-agent = {
+      most_recent = true
+    }
+
     coredns = {
       most_recent = true
     }
@@ -48,9 +52,13 @@ module "eks" {
     aws-ebs-csi-driver = {
       most_recent = true
 
-      service_account_role_arn = var.ebs_csi_role_arn
+      pod_identity_association = [
+        {
+          role_arn        = var.ebs_csi_role_arn
+          service_account = "ebs-csi-controller-sa"
+        }
+      ]
     }
-
   }
 
   ####################################################
