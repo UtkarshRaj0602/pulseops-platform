@@ -54,3 +54,8 @@ variable "ebs_csi_role_arn" {
   description = "IAM role ARN used by the AWS EBS CSI driver through EKS Pod Identity"
   type        = string
 }
+
+variable "github_actions_role_arn" {
+  description = "IAM role ARN used by GitHub Actions to access EKS"
+  type        = string
+}
