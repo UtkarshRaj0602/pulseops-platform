@@ -57,14 +57,15 @@ resource "aws_iam_role" "github_actions" {
       }
     ]
   })
-
-  tags = merge(
-    local.common_tags,
-    {
-      Name = "${local.name_prefix}-github-actions-role"
-    }
-  )
 }
+
+#   tags = merge(
+#     local.common_tags,
+#     {
+#       Name = "${local.name_prefix}-github-actions-role"
+#     }
+#   )
+# }
 
 # resource "aws_iam_role_policy" "github_actions_ecr" {
 
