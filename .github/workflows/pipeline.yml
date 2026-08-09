@@ -273,55 +273,55 @@ jobs:
 # TERRAFORM ROLLBACK
 # =========================================================
 
-  # terraform-rollback:
-  #   name: Terraform Rollback
-  #   runs-on: ubuntu-latest
+  terraform-rollback:
+    name: Terraform Rollback
+    runs-on: ubuntu-latest
 
-  #   if: ${{ always() && needs.terraform.result == 'failure' }}
+    if: ${{ always() && needs.terraform.result == 'failure' }}
 
-  #   needs:
-  #     - terraform
+    needs:
+      - terraform
 
-  #   defaults:
-  #     run:
-  #       working-directory: infrastructure/terraform
+    defaults:
+      run:
+        working-directory: infrastructure/terraform
 
-  #   steps:
+    steps:
 
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v6
 
-  #     - name: Configure AWS credentials
-  #       uses: aws-actions/configure-aws-credentials@v6
-  #       with:
-  #         role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
-  #         aws-region: ${{ env.AWS_REGION }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
-  #     - name: Verify AWS identity
-  #       run: |
-  #         aws sts get-caller-identity
+      - name: Verify AWS identity
+        run: |
+          aws sts get-caller-identity
 
-  #     - name: Setup Terraform
-  #       uses: hashicorp/setup-terraform@v3
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-  #     - name: Terraform Init
-  #       run: |
-  #         terraform init
+      - name: Terraform Init
+        run: |
+          terraform init
 
-  #     - name: Terraform Rollback
-  #       run: |
-  #         echo "Terraform failed."
-  #         echo "Starting rollback of Terraform-managed stage infrastructure..."
+      - name: Terraform Rollback
+        run: |
+          echo "Terraform failed."
+          echo "Starting rollback of Terraform-managed stage infrastructure..."
 
-  #         terraform destroy \
-  #           -auto-approve \
-  #           -var-file="environments/stage/terraform.tfvars"
+          terraform destroy \
+            -auto-approve \
+            -var-file="environments/stage/terraform.tfvars"
 
-  #     - name: Verify Terraform State
-  #       if: always()
-  #       run: |
-  #         echo "Remaining Terraform resources:"
-  #         terraform state list || true
+      - name: Verify Terraform State
+        if: always()
+        run: |
+          echo "Remaining Terraform resources:"
+          terraform state list || true
 
   # =========================================================
   # BACKEND
