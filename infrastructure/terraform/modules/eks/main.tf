@@ -47,6 +47,8 @@ module "eks" {
 
     aws-ebs-csi-driver = {
       most_recent = true
+
+      service_account_role_arn = var.ebs_csi_role_arn
     }
 
   }

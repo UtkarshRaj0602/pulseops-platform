@@ -110,6 +110,8 @@ module "eks" {
 
   node_security_group_id = module.security.eks_node_security_group_id
 
+  ebs_csi_role_arn = module.irsa.ebs_csi_role_arn
+
   desired_size        = var.desired_size
   min_size            = var.min_size
   max_size            = var.max_size

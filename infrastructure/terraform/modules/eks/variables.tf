@@ -49,3 +49,8 @@ variable "min_size" {
 variable "max_size" {
   type = number
 }
+
+variable "ebs_csi_role_arn" {
+  description = "IAM role ARN for the EBS CSI driver"
+  type        = string
+}
