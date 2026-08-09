@@ -14,6 +14,13 @@ module "vpc" {
   enable_nat_gateway = true
   single_nat_gateway = true
 }
+
+module "iam" {
+  source = "./modules/iam"
+
+  project_name = var.project_name
+  environment  = var.environment
+}
 module "security" {
 
   source = "./modules/security"
@@ -210,10 +217,3 @@ module "namespace" {
 #     module.sqs
 #   ]
 # }
-
-module "iam" {
-  source = "./modules/iam"
-
-  project_name = var.project_name
-  environment  = var.environment
-}

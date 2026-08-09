@@ -121,10 +121,6 @@ output "sqs_queue_arn" {
 # ECR
 ###########################################################
 
-###########################################################
-# ECR
-###########################################################
-
 output "ecr_repository_urls" {
   description = "ECR repository URLs"
   value       = module.ecr.repository_urls
@@ -153,7 +149,7 @@ output "database_secret_arn" {
 # IAM
 ###########################################################
 
-output "github_actions_role_arn" {
-  description = "GitHub Actions IAM Role ARN"
-  value       = module.iam.github_actions_role_arn
-}
+# output "github_actions_role_arn" {
+#   description = "GitHub Actions IAM Role ARN"
+#   value       = module.iam.github_actions_role_arn
+# }

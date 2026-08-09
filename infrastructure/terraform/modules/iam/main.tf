@@ -28,81 +28,81 @@ resource "aws_iam_role" "eks_node" {
 
 }
 
-resource "aws_iam_role" "github_actions" {
+# resource "aws_iam_role" "github_actions" {
 
-  name = "${local.name_prefix}-github-actions-role"
+#   name = "${local.name_prefix}-github-actions-role"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17"
 
-    Statement = [
-      {
-        Effect = "Allow"
+#     Statement = [
+#       {
+#         Effect = "Allow"
 
-        Principal = {
-          Federated = "arn:aws:iam::051826706795:oidc-provider/token.actions.githubusercontent.com"
-        }
+#         Principal = {
+#           Federated = "arn:aws:iam::051826706795:oidc-provider/token.actions.githubusercontent.com"
+#         }
 
-        Action = "sts:AssumeRoleWithWebIdentity"
+#         Action = "sts:AssumeRoleWithWebIdentity"
 
-        Condition = {
-          StringEquals = {
-            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          }
+#         Condition = {
+#           StringEquals = {
+#             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+#           }
 
-          StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:UtkarshRaj0602/pulseops-platform:ref:refs/heads/stage"
-          }
-        }
-      }
-    ]
-  })
+#           StringLike = {
+#             "token.actions.githubusercontent.com:sub" = "repo:UtkarshRaj0602/pulseops-platform:ref:refs/heads/stage"
+#           }
+#         }
+#       }
+#     ]
+#   })
 
-  tags = merge(
-    local.common_tags,
-    {
-      Name = "${local.name_prefix}-github-actions-role"
-    }
-  )
-}
+#   tags = merge(
+#     local.common_tags,
+#     {
+#       Name = "${local.name_prefix}-github-actions-role"
+#     }
+#   )
+# }
 
-resource "aws_iam_role_policy" "github_actions_ecr" {
+# resource "aws_iam_role_policy" "github_actions_ecr" {
 
-  name = "${local.name_prefix}-github-actions-ecr"
+#   name = "${local.name_prefix}-github-actions-ecr"
 
-  role = aws_iam_role.github_actions.id
+#   role = aws_iam_role.github_actions.id
 
-  policy = jsonencode({
-    Version = "2012-10-17"
+#   policy = jsonencode({
+#     Version = "2012-10-17"
 
-    Statement = [
+#     Statement = [
 
-      {
-        Effect = "Allow"
+#       {
+#         Effect = "Allow"
 
-        Action = [
-          "ecr:GetAuthorizationToken"
-        ]
+#         Action = [
+#           "ecr:GetAuthorizationToken"
+#         ]
 
-        Resource = "*"
-      },
+#         Resource = "*"
+#       },
 
-      {
-        Effect = "Allow"
+#       {
+#         Effect = "Allow"
 
-        Action = [
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:CompleteLayerUpload",
-          "ecr:InitiateLayerUpload",
-          "ecr:PutImage",
-          "ecr:UploadLayerPart",
-          "ecr:BatchGetImage",
-          "ecr:GetDownloadUrlForLayer"
-        ]
+#         Action = [
+#           "ecr:BatchCheckLayerAvailability",
+#           "ecr:CompleteLayerUpload",
+#           "ecr:InitiateLayerUpload",
+#           "ecr:PutImage",
+#           "ecr:UploadLayerPart",
+#           "ecr:BatchGetImage",
+#           "ecr:GetDownloadUrlForLayer"
+#         ]
 
-        Resource = "arn:aws:ecr:ap-south-1:051826706795:repository/pulseops-*"
-      }
+#         Resource = "arn:aws:ecr:ap-south-1:051826706795:repository/pulseops-*"
+#       }
 
-    ]
-  })
-}
+#     ]
+#   })
+# }
