@@ -46,11 +46,11 @@ node_instance_types = [
   "t3a.small"
 ]
 
-desired_size = 1
+desired_size = 2
 
-min_size = 1
+min_size = 2
 
-max_size = 2
+max_size = 3
 
 # -----------------------------------------------------------------------------
 # RDS
