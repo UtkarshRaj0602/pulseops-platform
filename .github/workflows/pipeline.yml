@@ -138,6 +138,13 @@ jobs:
         run: |
           terraform fmt -check -recursive
 
+###########################Added forced terraform clean##########################
+      - name: Clean Terraform
+        run: |
+          rm -rf .terraform
+          rm -f .terraform.lock.hcl
+          rm -rf ~/.terraform.d/plugin-cache
+
       - name: Terraform Init
         run: |
           terraform init
