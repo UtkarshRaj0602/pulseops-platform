@@ -128,17 +128,17 @@ module "irsa" {
 
 }
 
-module "namespace" {
+# module "namespace" {
 
-  source = "./modules/namespace"
+#   source = "./modules/namespace"
 
-  namespace = var.namespace
+#   namespace = var.namespace
 
-  project_name = var.project_name
+#   project_name = var.project_name
 
-  environment = var.environment
+#   environment = var.environment
 
-}
+# }
 
 ####################
 # Phase-2 below -- #
@@ -190,7 +190,7 @@ module "namespace" {
 
 #   source = "./modules/configmap"
 
-#   namespace  = var.namespace
+#   namespace   = var.namespace
 #   environment = var.environment
 
 #   aws_region = var.aws_region

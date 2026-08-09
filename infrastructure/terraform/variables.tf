@@ -78,6 +78,10 @@ variable "db_name" {
   type = string
 }
 
+variable "db_port" {
+  type = number
+}
+
 variable "db_username" {
   type = string
 }
@@ -104,6 +108,10 @@ variable "redis_node_type" {
 
 variable "redis_engine_version" {
   type = string
+}
+
+variable "redis_port" {
+  type = number
 }
 
 # -----------------------------------------------------------------------------

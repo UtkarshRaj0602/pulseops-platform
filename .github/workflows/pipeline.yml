@@ -96,18 +96,83 @@ jobs:
         run: |
           terraform validate
 
-      - name: Terraform Plan
+    # ==========================================
+    # PHASE 1 - AWS INFRASTRUCTURE
+    # ==========================================
+      - name: Terraform Infrastructure Plan
         run: |
           terraform plan \
             -var-file="environments/stage/terraform.tfvars" \
-            -out=stage.tfplan
+            -target=module.vpc \
+            -target=module.security \
+            -target=module.iam \
+            -target=module.ecr \
+            -target=module.sqs \
+            -target=module.secrets \
+            -target=module.rds \
+            -target=module.redis \
+            -target=module.eks \
+            -target=module.irsa \
+            -out=stage-infrastructure.tfplan
 
-      - name: Terraform Apply
+      - name: Terraform Infrastructure Apply
         run: |
           terraform apply \
             -auto-approve \
-            stage.tfplan
+            stage-infrastructure.tfplan
 
+    # ==========================================
+    # WAIT FOR EKS
+    # ==========================================
+      - name: Wait for EKS
+        run: |
+          CLUSTER_NAME=$(terraform output -raw eks_cluster_name)
+
+          echo "Waiting for EKS cluster: $CLUSTER_NAME"
+
+          for i in {1..30}; do
+
+            STATUS=$(aws eks describe-cluster \
+              --name "$CLUSTER_NAME" \
+              --region "$AWS_REGION" \
+              --query 'cluster.status' \
+              --output text)
+
+            echo "EKS status: $STATUS"
+
+            if [ "$STATUS" = "ACTIVE" ]; then
+              echo "EKS cluster is ACTIVE"
+              break
+            fi
+
+            if [ "$i" -eq 30 ]; then
+              echo "EKS cluster did not become ACTIVE"
+              exit 1
+            fi
+
+            sleep 20
+
+          done
+
+    # ==========================================
+    # PHASE 2 - KUBERNETES / HELM
+    # ==========================================
+      
+      - name: Terraform Full Plan
+        run: |
+          terraform plan \
+            -var-file="environments/stage/terraform.tfvars" \
+            -out=stage-full.tfplan
+
+      - name: Terraform Full Apply
+        run: |
+          terraform apply \
+            -auto-approve \
+            stage-full.tfplan
+
+    # ==========================================
+    # OUTPUTS
+    # ==========================================
       - name: Get Terraform Outputs
         id: terraform-output
         run: |
@@ -121,6 +186,59 @@ jobs:
           echo "EKS Cluster: $CLUSTER_NAME"
           echo "cluster_name=$CLUSTER_NAME" >> "$GITHUB_OUTPUT"
 
+# =========================================================
+# TERRAFORM ROLLBACK
+# =========================================================
+
+  terraform-rollback:
+    name: Terraform Rollback
+    runs-on: ubuntu-latest
+
+    if: ${{ always() && needs.terraform.result == 'failure' }}
+
+    needs:
+      - terraform
+
+    defaults:
+      run:
+        working-directory: infrastructure/terraform
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify AWS identity
+        run: |
+          aws sts get-caller-identity
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: |
+          terraform init
+
+      - name: Terraform Rollback
+        run: |
+          echo "Terraform failed."
+          echo "Starting rollback of Terraform-managed stage infrastructure..."
+
+          terraform destroy \
+            -auto-approve \
+            -var-file="environments/stage/terraform.tfvars"
+
+      - name: Verify Terraform State
+        if: always()
+        run: |
+          echo "Remaining Terraform resources:"
+          terraform state list || true
 
   # =========================================================
   # BACKEND

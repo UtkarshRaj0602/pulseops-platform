@@ -58,6 +58,8 @@ max_size = 2
 
 db_name = "pulseops"
 
+db_port = 5432
+
 db_username = "postgres"
 
 db_instance_class = "db.t4g.micro"
@@ -71,6 +73,8 @@ engine_version = "17.5"
 # -----------------------------------------------------------------------------
 
 redis_node_type = "cache.t4g.micro"
+
+redis_port = 6379
 
 redis_engine_version = "7.1"
 
