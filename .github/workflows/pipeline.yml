@@ -326,6 +326,32 @@ jobs:
           echo "cluster_name=$CLUSTER_NAME" >> "$GITHUB_OUTPUT"
 
 # =========================================================
+# Force delete Stage database secret
+# =========================================================
+
+      - name: Force delete Stage database secret
+        run: |
+          echo "Force deleting pulseops-stage-database if it exists..."
+          
+          aws secretsmanager delete-secret \
+            --secret-id pulseops-stage-database \
+            --force-delete-without-recovery \
+            --region "${AWS_REGION}" || true
+          
+          echo "Waiting for secret deletion..."
+          for i in {1..12}; do
+            if aws secretsmanager describe-secret \
+              --secret-id pulseops-stage-database \
+              --region "${AWS_REGION}" >/dev/null 2>&1; then
+              echo "Secret still exists. Waiting..."
+              sleep 5
+            else
+              echo "Secret is no longer present."
+              break
+            fi
+          done
+
+# =========================================================
 # TERRAFORM ROLLBACK
 # =========================================================
 
