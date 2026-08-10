@@ -1,7 +1,7 @@
 resource "kubernetes_manifest" "secret_store" {
   manifest = {
     apiVersion = "external-secrets.io/v1"
-    kind       = "SecretStore"
+    kind       = "ClusterSecretStore"
 
     metadata = {
       name      = var.secret_store_name
@@ -43,7 +43,7 @@ resource "kubernetes_manifest" "database_secret" {
 
       secretStoreRef = {
         name = var.secret_store_name
-        kind = "SecretStore"
+        kind = "ClusterSecretStore"
       }
 
       target = {
