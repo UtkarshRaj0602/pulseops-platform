@@ -26,7 +26,7 @@ metadata:
 
     alb.ingress.kubernetes.io/group.name: pulseops
 
-    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-path: /health/live
 
     alb.ingress.kubernetes.io/healthcheck-port: traffic-port
 
@@ -81,7 +81,7 @@ spec:
           #
           # Health
           #
-          - path: /health
+          - path: /health/live
 
             pathType: Prefix
 
