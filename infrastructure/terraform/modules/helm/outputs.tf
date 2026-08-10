@@ -16,11 +16,11 @@ output "external_secrets_release" {
   value = helm_release.external_secrets.name
 }
 
-output "monitoring_release" {
-  description = "kube-prometheus-stack Helm Release"
+# output "monitoring_release" {
+#   description = "kube-prometheus-stack Helm Release"
 
-  value = helm_release.kube_prometheus_stack.name
-}
+#   value = helm_release.kube_prometheus_stack.name
+# }
 
 output "aws_load_balancer_controller_namespace" {
 
@@ -40,8 +40,8 @@ output "external_secrets_namespace" {
 
 }
 
-output "monitoring_namespace" {
+# output "monitoring_namespace" {
 
-  value = helm_release.kube_prometheus_stack.namespace
+#   value = helm_release.kube_prometheus_stack.namespace
 
-}
+# }

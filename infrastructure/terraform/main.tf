@@ -111,7 +111,7 @@ module "eks" {
 
   node_security_group_id = module.security.eks_node_security_group_id
 
-  ebs_csi_role_arn        = module.iam.ebs_csi_role_arn
+  # ebs_csi_role_arn        = module.iam.ebs_csi_role_arn
   github_actions_role_arn = var.github_actions_role_arn
 
   desired_size        = var.desired_size

@@ -29,7 +29,7 @@ output "eks_node_role_name" {
 # }
 
 
-output "ebs_csi_role_arn" {
+# output "ebs_csi_role_arn" {
 
-  value = aws_iam_role.ebs_csi.arn
-}
+#   value = aws_iam_role.ebs_csi.arn
+# }

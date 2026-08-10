@@ -50,10 +50,10 @@ variable "max_size" {
   type = number
 }
 
-variable "ebs_csi_role_arn" {
-  description = "IAM role ARN used by the AWS EBS CSI driver through EKS Pod Identity"
-  type        = string
-}
+# variable "ebs_csi_role_arn" {
+#   description = "IAM role ARN used by the AWS EBS CSI driver through EKS Pod Identity"
+#   type        = string
+# }
 
 variable "github_actions_role_arn" {
   description = "ARN of the externally managed GitHub Actions IAM role"
