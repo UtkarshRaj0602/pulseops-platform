@@ -39,8 +39,8 @@ spec:
 
       terminationGracePeriodSeconds: 30
 
-      securityContext:
-        runAsNonRoot: true
+      # securityContext:
+      #   runAsNonRoot: true
 
       affinity:
 
@@ -73,7 +73,7 @@ spec:
                 name: worker-config
 
             - secretRef:
-                name: database_secret
+                name: backend-secret
 
           resources:
 
@@ -85,9 +85,9 @@ spec:
               cpu: "500m"
               memory: "512Mi"
 
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: false
+          # securityContext:
+            # allowPrivilegeEscalation: false
+            # readOnlyRootFilesystem: false
 
             capabilities:
               drop:

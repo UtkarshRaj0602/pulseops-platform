@@ -36,9 +36,9 @@ spec:
     spec:
       terminationGracePeriodSeconds: 30
 
-      securityContext:
-        runAsNonRoot: true
-        allowPrivilegeEscalation: false
+      # securityContext:
+      #   runAsNonRoot: true
+        # allowPrivilegeEscalation: false
 
       affinity:
         podAntiAffinity:
@@ -101,9 +101,9 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 3
 
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: false
+          # securityContext:
+            # allowPrivilegeEscalation: false
+            # readOnlyRootFilesystem: false
 
             capabilities:
               drop:

@@ -41,9 +41,9 @@ spec:
 
       terminationGracePeriodSeconds: 30
 
-      securityContext:
-        runAsNonRoot: true
-        allowPrivilegeEscalation: false
+      # securityContext:
+      #   runAsNonRoot: true
+        # allowPrivilegeEscalation: false
 
       affinity:
 
@@ -82,7 +82,7 @@ spec:
                 name: backend-config
 
             - secretRef:
-                name: database_secret
+                name: backend-secret
 
           resources:
 
@@ -126,7 +126,7 @@ spec:
             failureThreshold: 3
 
           securityContext:
-            allowPrivilegeEscalation: false
+            # allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false
             capabilities:
               drop:
