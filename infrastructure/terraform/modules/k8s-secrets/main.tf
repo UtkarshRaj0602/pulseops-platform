@@ -53,7 +53,7 @@ resource "kubernetes_manifest" "database_secret" {
 
       data = [
         {
-          secretKey = "username"
+          secretKey = "DB_USERNAME"
 
           remoteRef = {
             key      = var.database_secret_name
@@ -61,7 +61,7 @@ resource "kubernetes_manifest" "database_secret" {
           }
         },
         {
-          secretKey = "password"
+          secretKey = "DB_PASSWORD"
 
           remoteRef = {
             key      = var.database_secret_name
