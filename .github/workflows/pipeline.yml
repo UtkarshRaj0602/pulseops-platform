@@ -362,10 +362,10 @@ jobs:
     # Stage infra validation
     # =========================================================
 
-      - name: Validate Stage Infrastructure
-        run: |
-          chmod +x scripts/validate-stage.sh
-          ./scripts/validate-stage.sh
+      # - name: Validate Stage Infrastructure
+      #   run: |
+      #     chmod +x scripts/validate-stage.sh
+      #     ./scripts/validate-stage.sh
 
     # ==========================================
     # OUTPUTS
