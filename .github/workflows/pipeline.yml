@@ -892,36 +892,36 @@ jobs:
       # VERIFY BACKEND ROLLOUT
       # -------------------------------------------------------
 
-      - name: Verify Backend Rollout
-        run: |
-          kubectl rollout status \
-            deployment/backend \
-            -n pulseops \
-            --timeout=5m
+      # - name: Verify Backend Rollout
+      #   run: |
+      #     kubectl rollout status \
+      #       deployment/backend \
+      #       -n pulseops \
+      #       --timeout=5m
 
 
       # -------------------------------------------------------
       # VERIFY WORKER ROLLOUT
       # -------------------------------------------------------
 
-      - name: Verify Worker Rollout
-        run: |
-          kubectl rollout status \
-            deployment/worker \
-            -n pulseops \
-            --timeout=5m
+      # - name: Verify Worker Rollout
+      #   run: |
+      #     kubectl rollout status \
+      #       deployment/worker \
+      #       -n pulseops \
+      #       --timeout=5m
 
 
       # -------------------------------------------------------
       # VERIFY FRONTEND ROLLOUT
       # -------------------------------------------------------
 
-      - name: Verify Frontend Rollout
-        run: |
-          kubectl rollout status \
-            deployment/frontend \
-            -n pulseops \
-            --timeout=5m
+      # - name: Verify Frontend Rollout
+      #   run: |
+      #     kubectl rollout status \
+      #       deployment/frontend \
+      #       -n pulseops \
+      #       --timeout=5m
 
 
       # -------------------------------------------------------

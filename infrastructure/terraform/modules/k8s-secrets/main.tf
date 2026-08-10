@@ -1,45 +1,30 @@
 resource "kubernetes_manifest" "secret_store" {
-
   manifest = {
     apiVersion = "external-secrets.io/v1"
-
-    kind = "SecretStore"
+    kind       = "ClusterSecretStore"
 
     metadata = {
-      name      = var.secret_store_name
-      namespace = var.namespace
+      name = var.secret_store_name
     }
 
     spec = {
-
       provider = {
-
         aws = {
-
           service = "SecretsManager"
-
-          region = var.aws_region
+          region  = var.aws_region
 
           auth = {
-
             jwt = {
-
               serviceAccountRef = {
-                name = "external-secrets"
+                name      = "external-secrets"
+                namespace = "external-secrets"
               }
-
             }
-
           }
-
         }
-
       }
-
     }
-
   }
-
 }
 
 resource "kubernetes_manifest" "database_secret" {
@@ -63,11 +48,8 @@ resource "kubernetes_manifest" "database_secret" {
       refreshInterval = "1h"
 
       secretStoreRef = {
-
         name = var.secret_store_name
-
-        kind = "SecretStore"
-
+        kind = "ClusterSecretStore"
       }
 
       target = {
