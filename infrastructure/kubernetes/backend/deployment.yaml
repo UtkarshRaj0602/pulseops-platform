@@ -97,7 +97,7 @@ spec:
           startupProbe:
 
             httpGet:
-              path: /health
+              path: /health/live
               port: http
 
             failureThreshold: 30
@@ -106,7 +106,7 @@ spec:
           readinessProbe:
 
             httpGet:
-              path: /health
+              path: /health/ready
               port: http
 
             initialDelaySeconds: 10
@@ -117,7 +117,7 @@ spec:
           livenessProbe:
 
             httpGet:
-              path: /health
+              path: /health/live
               port: http
 
             initialDelaySeconds: 30
