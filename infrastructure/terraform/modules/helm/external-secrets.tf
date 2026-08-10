@@ -8,8 +8,12 @@ resource "helm_release" "external_secrets" {
 
   version = "0.16.2"
 
-  wait    = true
-  timeout = 600
+  wait          = true
+  wait_for_jobs = true
+  timeout       = 600
+
+  atomic          = true
+  cleanup_on_fail = true
 
   set = [
     {
@@ -24,6 +28,10 @@ resource "helm_release" "external_secrets" {
       name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
       value = var.external_secrets_role_arn
     }
+  ]
+
+  depends_on = [
+    helm_release.aws_load_balancer_controller
   ]
 
 }

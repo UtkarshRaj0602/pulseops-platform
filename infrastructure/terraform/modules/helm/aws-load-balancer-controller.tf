@@ -10,9 +10,12 @@ resource "helm_release" "aws_load_balancer_controller" {
 
   version = "1.13.4"
 
-  wait = true
+  wait          = true
+  wait_for_jobs = true
+  timeout       = 600
 
-  timeout = 600
+  atomic          = true
+  cleanup_on_fail = true
 
   set = [
     {
