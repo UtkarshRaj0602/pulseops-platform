@@ -1,10 +1,11 @@
 resource "kubernetes_manifest" "secret_store" {
   manifest = {
     apiVersion = "external-secrets.io/v1"
-    kind       = "ClusterSecretStore"
+    kind       = "SecretStore"
 
     metadata = {
-      name = var.secret_store_name
+      name      = var.secret_store_name
+      namespace = var.namespace
     }
 
     spec = {
@@ -28,70 +29,46 @@ resource "kubernetes_manifest" "secret_store" {
 }
 
 resource "kubernetes_manifest" "database_secret" {
-
   manifest = {
-
     apiVersion = "external-secrets.io/v1"
-
-    kind = "ExternalSecret"
+    kind       = "ExternalSecret"
 
     metadata = {
-
-      name = "backend-secret"
-
+      name      = "backend-secret"
       namespace = var.namespace
-
     }
 
     spec = {
-
       refreshInterval = "1h"
 
       secretStoreRef = {
         name = var.secret_store_name
-        kind = "ClusterSecretStore"
+        kind = "SecretStore"
       }
 
       target = {
-
-        name = "backend-secret"
-
+        name           = "backend-secret"
         creationPolicy = "Owner"
-
       }
 
       data = [
-
         {
           secretKey = "username"
 
           remoteRef = {
-
-            key = var.database_secret_name
-
+            key      = var.database_secret_name
             property = "username"
-
           }
-
         },
-
         {
           secretKey = "password"
 
           remoteRef = {
-
-            key = var.database_secret_name
-
+            key      = var.database_secret_name
             property = "password"
-
           }
-
         }
-
       ]
-
     }
-
   }
-
 }
