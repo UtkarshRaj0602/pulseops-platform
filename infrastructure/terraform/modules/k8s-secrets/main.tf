@@ -34,8 +34,8 @@ resource "kubernetes_manifest" "database_secret" {
     kind       = "ExternalSecret"
 
     metadata = {
-      name = "backend-secret"
-      # namespace = var.namespace
+      name      = "backend-secret"
+      namespace = var.namespace
     }
 
     spec = {
