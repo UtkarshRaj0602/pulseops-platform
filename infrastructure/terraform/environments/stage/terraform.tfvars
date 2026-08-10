@@ -44,7 +44,7 @@ cluster_name = "pulseops-stage"
 
 cluster_version = "1.36"
 
-cluster_autoscaler_version = "VERSION"
+cluster_autoscaler_version = "9.47.0"
 
 node_instance_types = [
   "t3a.small"
