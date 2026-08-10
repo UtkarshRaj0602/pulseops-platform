@@ -290,17 +290,49 @@ jobs:
             sleep 10
           done
 
-      - name: Terraform Kubernetes Plan
+    # ==========================================
+    # Helm installation for Cluster Autoscaler
+    # ==========================================
+      - name: Prepare Helm for Cluster Autoscaler
         run: |
+          echo "========== INSTALL HELM =========="
+
+          if ! command -v helm >/dev/null 2>&1; then
+            curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          fi
+
+          echo "========== HELM VERSION =========="
+          helm version
+
+          echo "========== ADD AUTOSCALER REPOSITORY =========="
+          helm repo add autoscaler https://kubernetes.github.io/autoscaler
+
+          echo "========== UPDATE HELM REPOSITORIES =========="
+          helm repo update
+
+          echo "========== CLUSTER AUTOSCALER CHART =========="
+          helm search repo autoscaler/cluster-autoscaler --versions | head -10
+
+    # =========================================================================
+    # Terraform Cluster Autoscaler Plan & Apply and phase - 2b install
+    # =========================================================================
+
+      - name: Terraform Cluster Autoscaler Plan
+        run: |
+          echo "========== CLUSTER AUTOSCALER PLAN =========="
+
           terraform plan \
             -var-file="environments/stage/terraform.tfvars" \
-            -out=stage-kubernetes.tfplan
+            -target=module.cluster_autoscaler \
+            -out=stage-cluster-autoscaler.tfplan
 
-      - name: Terraform Kubernetes Apply
+      - name: Terraform Cluster Autoscaler Apply
         run: |
+          echo "========== CLUSTER AUTOSCALER APPLY =========="
+
           terraform apply \
             -auto-approve \
-            stage-kubernetes.tfplan
+            stage-cluster-autoscaler.tfplan
 
     # ==========================================
     # OUTPUTS
