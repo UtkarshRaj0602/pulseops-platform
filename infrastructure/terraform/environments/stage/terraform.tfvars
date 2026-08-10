@@ -40,6 +40,8 @@ database_subnets = [
 # EKS
 # -----------------------------------------------------------------------------
 
+cluster_name = "pulseops-stage"
+
 cluster_version = "1.36"
 
 cluster_autoscaler_version = "VERSION"
