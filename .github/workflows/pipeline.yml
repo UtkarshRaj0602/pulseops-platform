@@ -567,97 +567,97 @@ jobs:
       # - name: Build Backend Image
       #   run: |
       #     docker build \
-      #       -t pulseops-backend-api:$GITHUB_SHA \
+      #       -t pulseops-stage-backend-api:$GITHUB_SHA \
       #       ./backend/api
 
       # - name: Build Worker Image
       #   run: |
       #     docker build \
-      #       -t pulseops-backend-worker:$GITHUB_SHA \
+      #       -t pulseops-stage-backend-worker:$GITHUB_SHA \
       #       ./backend/worker
 
       # - name: Build Frontend Image
       #   run: |
       #     docker build \
-      #       -t pulseops-frontend:$GITHUB_SHA \
+      #       -t pulseops-stage-frontend:$GITHUB_SHA \
       #       ./frontend
 
       # - name: Tag Backend Image
       #   run: |
       #     docker tag \
-      #       pulseops-backend-api:$GITHUB_SHA \
-      #       $ECR_REGISTRY/pulseops-backend:$GITHUB_SHA
+      #       pulseops-stage-backend-api:$GITHUB_SHA \
+      #       $ECR_REGISTRY/pulseops-stage-backend:$GITHUB_SHA
 
       # - name: Tag Worker Image
       #   run: |
       #     docker tag \
-      #       pulseops-backend-worker:$GITHUB_SHA \
-      #       $ECR_REGISTRY/pulseops-worker:$GITHUB_SHA
+      #       pulseops-stage-backend-worker:$GITHUB_SHA \
+      #       $ECR_REGISTRY/pulseops-stage-worker:$GITHUB_SHA
 
       # - name: Tag Frontend Image
       #   run: |
       #     docker tag \
-      #       pulseops-frontend:$GITHUB_SHA \
-      #       $ECR_REGISTRY/pulseops-frontend:$GITHUB_SHA
+      #       pulseops-stage-frontend:$GITHUB_SHA \
+      #       $ECR_REGISTRY/pulseops-stage-frontend:$GITHUB_SHA
 
       # - name: Push Backend Image
       #   run: |
       #     docker push \
-      #       $ECR_REGISTRY/pulseops-backend:$GITHUB_SHA
+      #       $ECR_REGISTRY/pulseops-stage-backend:$GITHUB_SHA
 
       # - name: Push Worker Image
       #   run: |
       #     docker push \
-      #       $ECR_REGISTRY/pulseops-worker:$GITHUB_SHA
+      #       $ECR_REGISTRY/pulseops-stage-worker:$GITHUB_SHA
 
       # - name: Push Frontend Image
       #   run: |
       #     docker push \
-      #       $ECR_REGISTRY/pulseops-frontend:$GITHUB_SHA
+      #       $ECR_REGISTRY/pulseops-stage-frontend:$GITHUB_SHA
 
       - name: Build Backend Image
         run: |
           docker build \
-            -t "${ECR_REGISTRY}/pulseops-backend:${GITHUB_SHA}" \
+            -t "${ECR_REGISTRY}/pulseops-stage-backend:${GITHUB_SHA}" \
             ./backend/api
 
       - name: Build Worker Image
         run: |
           docker build \
-            -t "${ECR_REGISTRY}/pulseops-worker:${GITHUB_SHA}" \
+            -t "${ECR_REGISTRY}/pulseops-stage-worker:${GITHUB_SHA}" \
             ./backend/worker
 
       - name: Build Frontend Image
         run: |
           docker build \
-            -t "${ECR_REGISTRY}/pulseops-frontend:${GITHUB_SHA}" \
+            -t "${ECR_REGISTRY}/pulseops-stage-frontend:${GITHUB_SHA}" \
             ./frontend
 
       - name: Push Backend Image
         run: |
           docker push \
-            "${ECR_REGISTRY}/pulseops-backend:${GITHUB_SHA}"
+            "${ECR_REGISTRY}/pulseops-stage-backend:${GITHUB_SHA}"
 
       - name: Push Worker Image
         run: |
           docker push \
-            "${ECR_REGISTRY}/pulseops-worker:${GITHUB_SHA}"
+            "${ECR_REGISTRY}/pulseops-stage-worker:${GITHUB_SHA}"
 
       - name: Push Frontend Image
         run: |
           docker push \
-            "${ECR_REGISTRY}/pulseops-frontend:${GITHUB_SHA}"
+            "${ECR_REGISTRY}/pulseops-stage-frontend:${GITHUB_SHA}"
 
       - name: Display Image References
         run: |
           echo "Backend:"
-          echo "$ECR_REGISTRY/pulseops-backend:$GITHUB_SHA"
+          echo "$ECR_REGISTRY/pulseops-stage-backend:$GITHUB_SHA"
 
           echo "Worker:"
-          echo "$ECR_REGISTRY/pulseops-worker:$GITHUB_SHA"
+          echo "$ECR_REGISTRY/pulseops-stage-worker:$GITHUB_SHA"
 
           echo "Frontend:"
-          echo "$ECR_REGISTRY/pulseops-frontend:$GITHUB_SHA"
+          echo "$ECR_REGISTRY/pulseops-stage-frontend:$GITHUB_SHA"
 
   # =========================================================
   # EKS DEPLOYMENT
@@ -790,7 +790,7 @@ jobs:
         run: |
           kubectl set image \
             "deployment/backend" \
-            "backend=051826706795.dkr.ecr.ap-south-1.amazonaws.com/pulseops-backend:${GITHUB_SHA}" \
+            "backend=051826706795.dkr.ecr.ap-south-1.amazonaws.com/pulseops-stage-backend:${GITHUB_SHA}" \
             --namespace=pulseops
 
 
@@ -802,7 +802,7 @@ jobs:
         run: |
           kubectl set image \
             "deployment/worker" \
-            "worker=051826706795.dkr.ecr.ap-south-1.amazonaws.com/pulseops-worker:${GITHUB_SHA}" \
+            "worker=051826706795.dkr.ecr.ap-south-1.amazonaws.com/pulseops-stage-worker:${GITHUB_SHA}" \
             --namespace=pulseops
 
 
@@ -814,7 +814,7 @@ jobs:
         run: |
           kubectl set image \
             "deployment/frontend" \
-            "frontend=051826706795.dkr.ecr.ap-south-1.amazonaws.com/pulseops-frontend:${GITHUB_SHA}" \
+            "frontend=051826706795.dkr.ecr.ap-south-1.amazonaws.com/pulseops-stage-frontend:${GITHUB_SHA}" \
             --namespace=pulseops
 
 
