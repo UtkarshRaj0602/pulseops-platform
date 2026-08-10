@@ -1,0 +1,391 @@
+name: PulseOps Destroy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-south-1
+
+jobs:
+
+  # =========================================================
+  # DESTROY PULSeOPS STAGE INFRASTRUCTURE
+  # =========================================================
+
+  destroy:
+    name: Destroy PulseOps Stage Infrastructure
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: infrastructure/terraform
+
+    steps:
+
+      # =========================================================
+      # CHECKOUT
+      # =========================================================
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+
+      # =========================================================
+      # AWS CREDENTIALS
+      # =========================================================
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+
+      # =========================================================
+      # VERIFY AWS
+      # =========================================================
+
+      - name: Verify AWS identity
+        run: |
+          echo "========== AWS IDENTITY =========="
+          aws sts get-caller-identity
+
+
+      # =========================================================
+      # TERRAFORM
+      # =========================================================
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+
+      # =========================================================
+      # CLEAN TERRAFORM
+      # =========================================================
+
+      - name: Clean Terraform
+        run: |
+          echo "========== CLEAN TERRAFORM =========="
+
+          rm -rf .terraform
+          rm -f .terraform.lock.hcl
+          rm -rf ~/.terraform.d/plugin-cache
+
+
+      # =========================================================
+      # TERRAFORM INIT
+      # =========================================================
+
+      - name: Terraform Init
+        run: |
+          echo "========== TERRAFORM INIT =========="
+
+          terraform init -input=false
+
+          echo "========== TERRAFORM INIT COMPLETE =========="
+
+
+      # =========================================================
+      # GET EKS CLUSTER NAME
+      # =========================================================
+
+      - name: Get EKS cluster name
+        id: cluster
+        run: |
+          echo "========== GET EKS CLUSTER =========="
+
+          CLUSTER_NAME=$(terraform output -raw cluster_name 2>/dev/null || true)
+
+          if [ -z "$CLUSTER_NAME" ]; then
+            echo "Terraform output cluster_name is empty."
+
+            echo "Checking Terraform state..."
+            terraform state list || true
+
+            exit 1
+          fi
+
+          echo "EKS Cluster: $CLUSTER_NAME"
+
+          echo "EKS_CLUSTER_NAME=$CLUSTER_NAME" >> "$GITHUB_ENV"
+
+
+      # =========================================================
+      # VERIFY EKS CLUSTER
+      # =========================================================
+
+      - name: Verify EKS cluster
+        run: |
+          echo "========== VERIFY EKS CLUSTER =========="
+
+          aws eks describe-cluster \
+            --name "$EKS_CLUSTER_NAME" \
+            --region "$AWS_REGION" \
+            --query 'cluster.{Name:name,Status:status,Version:version}' \
+            --output table
+
+
+      # =========================================================
+      # INSTALL KUBECTL
+      # =========================================================
+
+      - name: Install kubectl
+        run: |
+          echo "========== INSTALL KUBECTL =========="
+
+          KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+
+          echo "Installing kubectl ${KUBECTL_VERSION}"
+
+          curl -LO \
+            "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+
+          chmod +x kubectl
+
+          sudo mv kubectl /usr/local/bin/kubectl
+
+
+      # =========================================================
+      # CONFIGURE KUBECTL
+      # =========================================================
+
+      - name: Configure kubectl
+        run: |
+          echo "========== CONFIGURE KUBECTL =========="
+
+          aws eks update-kubeconfig \
+            --region "$AWS_REGION" \
+            --name "$EKS_CLUSTER_NAME"
+
+
+      # =========================================================
+      # VERIFY KUBERNETES ACCESS
+      # =========================================================
+
+      - name: Verify Kubernetes access
+        run: |
+          echo "========== KUBERNETES ACCESS =========="
+
+          kubectl cluster-info
+
+          echo ""
+          echo "========== NODES =========="
+
+          kubectl get nodes -o wide
+
+
+      # =========================================================
+      # DELETE APPLICATION RESOURCES
+      # =========================================================
+
+      - name: Delete PulseOps Kubernetes resources
+        run: |
+          echo "========================================================="
+          echo " DELETE PULSeOPS KUBERNETES RESOURCES"
+          echo "========================================================="
+
+          echo ""
+          echo "Deleting backend resources..."
+
+          kubectl delete \
+            -f ../kubernetes/backend/ \
+            --ignore-not-found=true \
+            || true
+
+          echo ""
+          echo "Deleting frontend resources..."
+
+          kubectl delete \
+            -f ../kubernetes/frontend/ \
+            --ignore-not-found=true \
+            || true
+
+          echo ""
+          echo "Deleting worker resources..."
+
+          kubectl delete \
+            -f ../kubernetes/worker/ \
+            --ignore-not-found=true \
+            || true
+
+          echo ""
+          echo "Deleting ingress resources..."
+
+          kubectl delete \
+            -f ../kubernetes/ingress/ \
+            --ignore-not-found=true \
+            || true
+
+
+      # =========================================================
+      # WAIT FOR LOAD BALANCER / INGRESS CLEANUP
+      # =========================================================
+
+      - name: Wait for Kubernetes resources to terminate
+        run: |
+          echo "========== WAITING FOR KUBERNETES CLEANUP =========="
+
+          sleep 30
+
+          echo ""
+          echo "========== REMAINING PULSeOPS RESOURCES =========="
+
+          kubectl get all -n pulseops || true
+          kubectl get ingress -n pulseops || true
+
+
+      # =========================================================
+      # DELETE PULSeOPS NAMESPACE
+      # =========================================================
+
+      - name: Delete PulseOps namespace
+        run: |
+          echo "========== DELETE PULSeOPS NAMESPACE =========="
+
+          if kubectl get namespace pulseops >/dev/null 2>&1; then
+
+            echo "Deleting namespace pulseops..."
+
+            kubectl delete namespace pulseops \
+              --ignore-not-found=true
+
+          else
+
+            echo "Namespace pulseops does not exist."
+
+          fi
+
+
+      # =========================================================
+      # WAIT FOR NAMESPACE TERMINATION
+      # =========================================================
+
+      - name: Wait for namespace deletion
+        run: |
+          echo "========== WAITING FOR NAMESPACE DELETION =========="
+
+          for i in {1..30}; do
+
+            if kubectl get namespace pulseops >/dev/null 2>&1; then
+
+              echo "Namespace still exists. Attempt $i/30"
+
+              sleep 10
+
+            else
+
+              echo "Namespace pulseops has been deleted."
+
+              break
+
+            fi
+
+          done
+
+
+      # =========================================================
+      # TERRAFORM DESTROY PLAN
+      # =========================================================
+
+      - name: Terraform Destroy Plan
+        run: |
+          echo "========================================================="
+          echo " TERRAFORM DESTROY PLAN"
+          echo "========================================================="
+
+          terraform plan \
+            -destroy \
+            -var-file="environments/stage/terraform.tfvars" \
+            -out=stage-destroy.tfplan
+
+
+      # =========================================================
+      # TERRAFORM DESTROY
+      # =========================================================
+
+      - name: Terraform Destroy
+        run: |
+          echo "========================================================="
+          echo " TERRAFORM DESTROY"
+          echo "========================================================="
+
+          echo ""
+          echo "Destroying all Terraform-managed stage infrastructure..."
+          echo ""
+
+          terraform apply \
+            -input=false \
+            -auto-approve \
+            stage-destroy.tfplan
+
+          echo ""
+          echo "========================================================="
+          echo " TERRAFORM DESTROY COMPLETE"
+          echo "========================================================="
+
+
+      # =========================================================
+      # VERIFY TERRAFORM STATE
+      # =========================================================
+
+      - name: Verify Terraform state
+        if: always()
+        run: |
+          echo "========================================================="
+          echo " REMAINING TERRAFORM RESOURCES"
+          echo "========================================================="
+
+          terraform state list || true
+
+
+      # =========================================================
+      # FINAL AWS VERIFICATION
+      # =========================================================
+
+      - name: Verify EKS deletion
+        if: always()
+        run: |
+          echo "========================================================="
+          echo " VERIFY EKS DELETION"
+          echo "========================================================="
+
+          if aws eks describe-cluster \
+            --name "$EKS_CLUSTER_NAME" \
+            --region "$AWS_REGION" >/dev/null 2>&1; then
+
+            echo "WARNING: EKS cluster still exists."
+
+          else
+
+            echo "EKS cluster has been deleted."
+
+          fi
+
+
+      # =========================================================
+      # FINAL CLEANUP SUMMARY
+      # =========================================================
+
+      - name: Destroy summary
+        if: always()
+        run: |
+          echo ""
+          echo "========================================================="
+          echo " PULSeOPS STAGE DESTROY SUMMARY"
+          echo "========================================================="
+
+          echo ""
+          echo "Terraform state:"
+          terraform state list || true
+
+          echo ""
+          echo "EKS cluster:"
+          echo "$EKS_CLUSTER_NAME"
+
+          echo ""
+          echo "Destroy workflow completed."
+          echo "========================================================="
