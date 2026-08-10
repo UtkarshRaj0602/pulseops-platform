@@ -200,7 +200,7 @@ module "configmap" {
 
   aws_region = var.aws_region
 
-  db_host = module.rds.db_endpoint
+  db_host = module.rds.db_address
   db_port = var.db_port
   db_name = var.db_name
 
