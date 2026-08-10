@@ -35,26 +35,26 @@ data "aws_iam_policy_document" "alb_controller_assume_role" {
 }
 
 
-data "aws_iam_policy_document" "ebs_csi_assume_role" {
+# data "aws_iam_policy_document" "ebs_csi_assume_role" {
 
-  statement {
+#   statement {
 
-    effect = "Allow"
+#     effect = "Allow"
 
-    actions = [
-      "sts:AssumeRole",
-      "sts:TagSession"
-    ]
+#     actions = [
+#       "sts:AssumeRole",
+#       "sts:TagSession"
+#     ]
 
-    principals {
-      type = "Service"
+#     principals {
+#       type = "Service"
 
-      identifiers = [
-        "pods.eks.amazonaws.com"
-      ]
-    }
-  }
-}
+#       identifiers = [
+#         "pods.eks.amazonaws.com"
+#       ]
+#     }
+#   }
+# }
 
 data "aws_iam_policy_document" "external_secrets_assume_role" {
 

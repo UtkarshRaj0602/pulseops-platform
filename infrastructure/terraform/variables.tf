@@ -49,6 +49,9 @@ variable "cluster_version" {
   type = string
 }
 
+variable "cluster_name" {
+  type = string
+}
 variable "node_instance_types" {
   type = list(string)
 }
@@ -67,6 +70,11 @@ variable "max_size" {
 
 variable "namespace" {
   description = "Kubernetes namespace"
+  type        = string
+}
+
+variable "cluster_autoscaler_version" {
+  description = "Cluster Autoscaler Helm chart version"
   type        = string
 }
 

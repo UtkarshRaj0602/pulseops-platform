@@ -59,3 +59,7 @@ variable "github_actions_role_arn" {
   description = "ARN of the externally managed GitHub Actions IAM role"
   type        = string
 }
+
+variable "cluster_name" {
+  type = string
+}

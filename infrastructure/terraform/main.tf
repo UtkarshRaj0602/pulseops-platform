@@ -99,6 +99,7 @@ module "eks" {
   environment  = var.environment
 
   cluster_version = var.cluster_version
+  cluster_name    = var.cluster_name
 
   vpc_id = module.vpc.vpc_id
 
@@ -219,5 +220,21 @@ module "configmap" {
     module.rds,
     module.redis,
     module.sqs
+  ]
+}
+
+module "cluster_autoscaler" {
+  source = "./modules/cluster-autoscaler"
+
+  cluster_name = var.cluster_name
+  region       = var.aws_region
+
+  namespace            = "kube-system"
+  service_account_name = "cluster-autoscaler"
+
+  cluster_autoscaler_version = var.cluster_autoscaler_version
+
+  depends_on = [
+    module.eks
   ]
 }

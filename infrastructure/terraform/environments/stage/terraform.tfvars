@@ -42,6 +42,8 @@ database_subnets = [
 
 cluster_version = "1.36"
 
+cluster_autoscaler_version = "VERSION"
+
 node_instance_types = [
   "t3a.small"
 ]
@@ -50,7 +52,7 @@ desired_size = 3
 
 min_size = 3
 
-max_size = 3
+max_size = 6
 
 # -----------------------------------------------------------------------------
 # RDS
