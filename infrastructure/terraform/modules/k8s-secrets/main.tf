@@ -4,8 +4,8 @@ resource "kubernetes_manifest" "secret_store" {
     kind       = "ClusterSecretStore"
 
     metadata = {
-      name      = var.secret_store_name
-      namespace = var.namespace
+      name = var.secret_store_name
+      # namespace = var.namespace
     }
 
     spec = {
@@ -34,8 +34,8 @@ resource "kubernetes_manifest" "database_secret" {
     kind       = "ExternalSecret"
 
     metadata = {
-      name      = "backend-secret"
-      namespace = var.namespace
+      name = "backend-secret"
+      # namespace = var.namespace
     }
 
     spec = {
