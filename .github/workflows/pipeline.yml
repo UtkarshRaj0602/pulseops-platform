@@ -772,14 +772,61 @@ jobs:
 
 
       # -------------------------------------------------------
+      # ENSURE PULSeOPS NAMESPACE EXISTS
+      # -------------------------------------------------------
+
+      - name: Ensure PulseOps Namespace
+        run: |
+          echo "========== CHECKING PULSeOPS NAMESPACE =========="
+
+          if kubectl get namespace pulseops >/dev/null 2>&1; then
+            echo "Namespace 'pulseops' already exists."
+          else
+            echo "Namespace 'pulseops' does not exist."
+            echo "Creating namespace from manifest..."
+
+            kubectl apply \
+              -f infrastructure/kubernetes/namespace.yml
+          fi
+
+          echo ""
+          echo "========== WAITING FOR NAMESPACE =========="
+
+          kubectl wait \
+            --for=jsonpath='{.status.phase}'=Active \
+            namespace/pulseops \
+            --timeout=60s
+
+          echo ""
+          echo "========== NAMESPACE STATUS =========="
+
+          kubectl get namespace pulseops
+
+
+      # -------------------------------------------------------
       # APPLY KUBERNETES MANIFESTS
       # -------------------------------------------------------
 
       - name: Apply Kubernetes manifests
         run: |
+          echo "========== APPLYING KUBERNETES MANIFESTS =========="
+
           kubectl apply \
-            --recursive \
-            -f infrastructure/kubernetes/
+            -f infrastructure/kubernetes/backend/
+
+          kubectl apply \
+            -f infrastructure/kubernetes/frontend/
+
+          kubectl apply \
+            -f infrastructure/kubernetes/worker/
+
+          kubectl apply \
+            -f infrastructure/kubernetes/ingress/
+
+          echo ""
+          echo "========== KUBERNETES RESOURCES =========="
+
+          kubectl get all -n pulseops
 
 
       # -------------------------------------------------------
