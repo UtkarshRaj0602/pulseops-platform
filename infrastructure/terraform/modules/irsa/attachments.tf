@@ -21,3 +21,10 @@ resource "aws_iam_role_policy_attachment" "external_secrets" {
   policy_arn = aws_iam_policy.external_secrets.arn
 
 }
+
+resource "aws_iam_role_policy_attachment" "worker" {
+
+  role = aws_iam_role.worker.name
+
+  policy_arn = aws_iam_policy.worker.arn
+}

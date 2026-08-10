@@ -38,6 +38,7 @@ spec:
     spec:
 
       terminationGracePeriodSeconds: 30
+      serviceAccountName: worker
 
       # securityContext:
       #   runAsNonRoot: true

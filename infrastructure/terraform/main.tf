@@ -130,6 +130,8 @@ module "irsa" {
   oidc_provider_arn = module.eks.oidc_provider_arn
   oidc_provider     = module.eks.oidc_provider
 
+  sqs_queue_arn = module.sqs.queue_arn
+
 }
 
 module "namespace" {

@@ -39,3 +39,30 @@ resource "aws_iam_policy" "external_secrets" {
   policy = data.aws_iam_policy_document.external_secrets_policy.json
 
 }
+
+data "aws_iam_policy_document" "worker_policy" {
+
+  statement {
+
+    effect = "Allow"
+
+    actions = [
+      "sqs:ReceiveMessage",
+      "sqs:DeleteMessage",
+      "sqs:GetQueueAttributes"
+    ]
+
+    resources = [
+      var.sqs_queue_arn
+    ]
+  }
+}
+
+resource "aws_iam_policy" "worker" {
+
+  name = "${local.name_prefix}-worker-policy"
+
+  policy = data.aws_iam_policy_document.worker_policy.json
+
+  tags = local.common_tags
+}

@@ -27,3 +27,11 @@ resource "aws_iam_role" "external_secrets" {
   tags = local.common_tags
 
 }
+
+resource "aws_iam_role" "worker" {
+  name = "${local.name_prefix}-worker-role"
+
+  assume_role_policy = data.aws_iam_policy_document.worker_assume_role.json
+
+  tags = local.common_tags
+}

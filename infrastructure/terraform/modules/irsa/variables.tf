@@ -17,3 +17,15 @@ variable "oidc_provider" {
   description = "OIDC Provider URL"
   type        = string
 }
+
+# variable "cluster_name" {
+#   type = string
+# }
+
+# variable "namespace" {
+#   type = string
+# }
+
+variable "sqs_queue_arn" {
+  type = string
+}
