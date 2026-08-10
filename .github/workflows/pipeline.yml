@@ -169,7 +169,6 @@ jobs:
             -target=module.redis \
             -target=module.eks \
             -target=module.irsa \
-            -target=module.cluster_autoscaler \
             -out=stage-infrastructure.tfplan
 
           echo ""
