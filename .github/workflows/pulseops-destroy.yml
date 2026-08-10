@@ -51,7 +51,10 @@ jobs:
 
       - name: Verify AWS identity
         run: |
-          echo "========== AWS IDENTITY =========="
+          echo "========================================================="
+          echo " AWS IDENTITY"
+          echo "========================================================="
+
           aws sts get-caller-identity
 
 
@@ -69,7 +72,9 @@ jobs:
 
       - name: Clean Terraform
         run: |
-          echo "========== CLEAN TERRAFORM =========="
+          echo "========================================================="
+          echo " CLEAN TERRAFORM"
+          echo "========================================================="
 
           rm -rf .terraform
           rm -f .terraform.lock.hcl
@@ -82,51 +87,77 @@ jobs:
 
       - name: Terraform Init
         run: |
-          echo "========== TERRAFORM INIT =========="
+          echo "========================================================="
+          echo " TERRAFORM INIT"
+          echo "========================================================="
 
           terraform init -input=false
 
-          echo "========== TERRAFORM INIT COMPLETE =========="
+          echo ""
+          echo "Terraform initialization complete."
 
 
       # =========================================================
-      # GET EKS CLUSTER NAME
+      # SHOW TERRAFORM STATE
       # =========================================================
 
-      - name: Get EKS cluster name
-        id: cluster
+      - name: Inspect Terraform state
         run: |
-          echo "========== GET EKS CLUSTER =========="
+          echo "========================================================="
+          echo " CURRENT TERRAFORM STATE"
+          echo "========================================================="
+
+          terraform state list || true
+
+
+      # =========================================================
+      # CHECK EKS CLUSTER
+      # =========================================================
+
+      - name: Check EKS cluster
+        id: eks-check
+        run: |
+          echo "========================================================="
+          echo " CHECKING EKS CLUSTER"
+          echo "========================================================="
 
           CLUSTER_NAME=$(terraform output -raw cluster_name 2>/dev/null || true)
 
           if [ -z "$CLUSTER_NAME" ]; then
-            echo "Terraform output cluster_name is empty."
 
-            echo "Checking Terraform state..."
-            terraform state list || true
+            echo "Terraform cluster_name output not available."
+            echo "Using expected stage cluster name."
 
-            exit 1
+            CLUSTER_NAME="pulseops-stage"
+
           fi
 
           echo "EKS Cluster: $CLUSTER_NAME"
 
           echo "EKS_CLUSTER_NAME=$CLUSTER_NAME" >> "$GITHUB_ENV"
 
+          if aws eks describe-cluster \
+            --name "$CLUSTER_NAME" \
+            --region "$AWS_REGION" >/dev/null 2>&1; then
 
-      # =========================================================
-      # VERIFY EKS CLUSTER
-      # =========================================================
+            echo "EKS cluster exists."
 
-      - name: Verify EKS cluster
-        run: |
-          echo "========== VERIFY EKS CLUSTER =========="
+            echo "EKS_EXISTS=true" >> "$GITHUB_ENV"
 
-          aws eks describe-cluster \
-            --name "$EKS_CLUSTER_NAME" \
-            --region "$AWS_REGION" \
-            --query 'cluster.{Name:name,Status:status,Version:version}' \
-            --output table
+            aws eks describe-cluster \
+              --name "$CLUSTER_NAME" \
+              --region "$AWS_REGION" \
+              --query 'cluster.{Name:name,Status:status,Version:version}' \
+              --output table
+
+          else
+
+            echo "EKS cluster does not exist."
+            echo "EKS_EXISTS=false" >> "$GITHUB_ENV"
+
+            echo "Skipping Kubernetes cleanup."
+
+          fi
 
 
       # =========================================================
@@ -134,8 +165,11 @@ jobs:
       # =========================================================
 
       - name: Install kubectl
+        if: env.EKS_EXISTS == 'true'
         run: |
-          echo "========== INSTALL KUBECTL =========="
+          echo "========================================================="
+          echo " INSTALL KUBECTL"
+          echo "========================================================="
 
           KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
 
@@ -154,8 +188,11 @@ jobs:
       # =========================================================
 
       - name: Configure kubectl
+        if: env.EKS_EXISTS == 'true'
         run: |
-          echo "========== CONFIGURE KUBECTL =========="
+          echo "========================================================="
+          echo " CONFIGURE KUBECTL"
+          echo "========================================================="
 
           aws eks update-kubeconfig \
             --region "$AWS_REGION" \
@@ -167,88 +204,174 @@ jobs:
       # =========================================================
 
       - name: Verify Kubernetes access
-        run: |
-          echo "========== KUBERNETES ACCESS =========="
-
-          kubectl cluster-info
-
-          echo ""
-          echo "========== NODES =========="
-
-          kubectl get nodes -o wide
-
-
-      # =========================================================
-      # DELETE APPLICATION RESOURCES
-      # =========================================================
-
-      - name: Delete PulseOps Kubernetes resources
+        if: env.EKS_EXISTS == 'true'
         run: |
           echo "========================================================="
-          echo " DELETE PULSeOPS KUBERNETES RESOURCES"
+          echo " KUBERNETES ACCESS"
           echo "========================================================="
 
-          echo ""
-          echo "Deleting backend resources..."
+          if kubectl cluster-info >/dev/null 2>&1; then
 
-          kubectl delete \
-            -f ../kubernetes/backend/ \
-            --ignore-not-found=true \
-            || true
+            echo "Kubernetes cluster is accessible."
 
-          echo ""
-          echo "Deleting frontend resources..."
+            kubectl get nodes -o wide
 
-          kubectl delete \
-            -f ../kubernetes/frontend/ \
-            --ignore-not-found=true \
-            || true
+          else
 
-          echo ""
-          echo "Deleting worker resources..."
+            echo "Unable to access Kubernetes cluster."
+            echo "Skipping Kubernetes cleanup."
 
-          kubectl delete \
-            -f ../kubernetes/worker/ \
-            --ignore-not-found=true \
-            || true
+            echo "EKS_EXISTS=false" >> "$GITHUB_ENV"
 
-          echo ""
-          echo "Deleting ingress resources..."
-
-          kubectl delete \
-            -f ../kubernetes/ingress/ \
-            --ignore-not-found=true \
-            || true
+          fi
 
 
       # =========================================================
-      # WAIT FOR LOAD BALANCER / INGRESS CLEANUP
+      # CHECK PULSeOPS NAMESPACE
       # =========================================================
 
-      - name: Wait for Kubernetes resources to terminate
+      - name: Check PulseOps namespace
+        if: env.EKS_EXISTS == 'true'
         run: |
-          echo "========== WAITING FOR KUBERNETES CLEANUP =========="
-
-          sleep 30
-
-          echo ""
-          echo "========== REMAINING PULSeOPS RESOURCES =========="
-
-          kubectl get all -n pulseops || true
-          kubectl get ingress -n pulseops || true
-
-
-      # =========================================================
-      # DELETE PULSeOPS NAMESPACE
-      # =========================================================
-
-      - name: Delete PulseOps namespace
-        run: |
-          echo "========== DELETE PULSeOPS NAMESPACE =========="
+          echo "========================================================="
+          echo " CHECKING PULSeOPS NAMESPACE"
+          echo "========================================================="
 
           if kubectl get namespace pulseops >/dev/null 2>&1; then
 
-            echo "Deleting namespace pulseops..."
+            echo "Namespace pulseops exists."
+            echo "PULSEOPS_NAMESPACE_EXISTS=true" >> "$GITHUB_ENV"
+
+          else
+
+            echo "Namespace pulseops does not exist."
+            echo "PULSEOPS_NAMESPACE_EXISTS=false" >> "$GITHUB_ENV"
+
+          fi
+
+
+      # =========================================================
+      # DELETE BACKEND
+      # =========================================================
+
+      - name: Delete backend Kubernetes resources
+        if: env.EKS_EXISTS == 'true' && env.PULSEOPS_NAMESPACE_EXISTS == 'true'
+        run: |
+          echo "========================================================="
+          echo " DELETE BACKEND"
+          echo "========================================================="
+
+          if kubectl get deployment backend -n pulseops >/dev/null 2>&1; then
+
+            echo "Backend deployment exists."
+            kubectl delete \
+              -f ../kubernetes/backend/ \
+              --ignore-not-found=true
+
+          else
+
+            echo "Backend deployment does not exist."
+            echo "Skipping backend cleanup."
+
+          fi
+
+
+      # =========================================================
+      # DELETE FRONTEND
+      # =========================================================
+
+      - name: Delete frontend Kubernetes resources
+        if: env.EKS_EXISTS == 'true' && env.PULSEOPS_NAMESPACE_EXISTS == 'true'
+        run: |
+          echo "========================================================="
+          echo " DELETE FRONTEND"
+          echo "========================================================="
+
+          if kubectl get deployment frontend -n pulseops >/dev/null 2>&1; then
+
+            echo "Frontend deployment exists."
+
+            kubectl delete \
+              -f ../kubernetes/frontend/ \
+              --ignore-not-found=true
+
+          else
+
+            echo "Frontend deployment does not exist."
+            echo "Skipping frontend cleanup."
+
+          fi
+
+
+      # =========================================================
+      # DELETE WORKER
+      # =========================================================
+
+      - name: Delete worker Kubernetes resources
+        if: env.EKS_EXISTS == 'true' && env.PULSEOPS_NAMESPACE_EXISTS == 'true'
+        run: |
+          echo "========================================================="
+          echo " DELETE WORKER"
+          echo "========================================================="
+
+          if kubectl get deployment worker -n pulseops >/dev/null 2>&1; then
+
+            echo "Worker deployment exists."
+
+            kubectl delete \
+              -f ../kubernetes/worker/ \
+              --ignore-not-found=true
+
+          else
+
+            echo "Worker deployment does not exist."
+            echo "Skipping worker cleanup."
+
+          fi
+
+
+      # =========================================================
+      # DELETE INGRESS
+      # =========================================================
+
+      - name: Delete ingress Kubernetes resources
+        if: env.EKS_EXISTS == 'true' && env.PULSEOPS_NAMESPACE_EXISTS == 'true'
+        run: |
+          echo "========================================================="
+          echo " DELETE INGRESS"
+          echo "========================================================="
+
+          if kubectl get ingress -n pulseops >/dev/null 2>&1; then
+
+            echo "Ingress resources exist."
+
+            kubectl delete \
+              -f ../kubernetes/ingress/ \
+              --ignore-not-found=true
+
+          else
+
+            echo "Ingress resources do not exist."
+            echo "Skipping ingress cleanup."
+
+          fi
+
+
+      # =========================================================
+      # DELETE NAMESPACE
+      # =========================================================
+
+      - name: Delete PulseOps namespace
+        if: env.EKS_EXISTS == 'true'
+        run: |
+          echo "========================================================="
+          echo " DELETE PULSeOPS NAMESPACE"
+          echo "========================================================="
+
+          if kubectl get namespace pulseops >/dev/null 2>&1; then
+
+            echo "Namespace pulseops exists."
+            echo "Deleting namespace..."
 
             kubectl delete namespace pulseops \
               --ignore-not-found=true
@@ -256,35 +379,417 @@ jobs:
           else
 
             echo "Namespace pulseops does not exist."
+            echo "Skipping namespace deletion."
 
           fi
 
 
       # =========================================================
-      # WAIT FOR NAMESPACE TERMINATION
+      # WAIT FOR KUBERNETES CLEANUP
       # =========================================================
 
-      - name: Wait for namespace deletion
+      - name: Wait for Kubernetes cleanup
+        if: env.EKS_EXISTS == 'true'
         run: |
-          echo "========== WAITING FOR NAMESPACE DELETION =========="
+          echo "========================================================="
+          echo " WAITING FOR KUBERNETES CLEANUP"
+          echo "========================================================="
 
           for i in {1..30}; do
 
             if kubectl get namespace pulseops >/dev/null 2>&1; then
 
-              echo "Namespace still exists. Attempt $i/30"
+              echo "Namespace still exists."
+              echo "Attempt $i/30"
 
               sleep 10
 
             else
 
               echo "Namespace pulseops has been deleted."
-
               break
 
             fi
 
           done
+
+
+      # =========================================================
+      # CHECK SECRETS MANAGER
+      # =========================================================
+
+      - name: Check database secret
+        run: |
+          echo "========================================================="
+          echo " CHECKING DATABASE SECRET"
+          echo "========================================================="
+
+          SECRET_NAME="pulseops-stage-database"
+
+          if aws secretsmanager describe-secret \
+            --secret-id "$SECRET_NAME" \
+            --region "$AWS_REGION" >/dev/null 2>&1; then
+
+            echo "Database secret exists."
+            echo "DATABASE_SECRET_EXISTS=true" >> "$GITHUB_ENV"
+
+          else
+
+            echo "Database secret does not exist."
+            echo "DATABASE_SECRET_EXISTS=false" >> "$GITHUB_ENV"
+
+          fi
+
+
+      # =========================================================
+      # DELETE DATABASE SECRET
+      # =========================================================
+
+      - name: Delete database secret
+        if: env.DATABASE_SECRET_EXISTS == 'true'
+        run: |
+          echo "========================================================="
+          echo " DELETE DATABASE SECRET"
+          echo "========================================================="
+
+          SECRET_NAME="pulseops-stage-database"
+
+          aws secretsmanager delete-secret \
+            --secret-id "$SECRET_NAME" \
+            --force-delete-without-recovery \
+            --region "$AWS_REGION"
+
+          echo "Database secret deletion requested."
+
+
+      # =========================================================
+      # CHECK ECR REPOSITORIES
+      # =========================================================
+
+      - name: Check ECR repositories
+        run: |
+          echo "========================================================="
+          echo " CHECKING ECR REPOSITORIES"
+          echo "========================================================="
+
+          for REPO in \
+            pulseops-stage-backend \
+            pulseops-stage-worker \
+            pulseops-stage-frontend
+          do
+
+            echo ""
+            echo "Checking ECR repository: $REPO"
+
+            if aws ecr describe-repositories \
+              --repository-names "$REPO" \
+              --region "$AWS_REGION" >/dev/null 2>&1; then
+
+              echo "$REPO exists."
+              echo "$REPO=true" >> "$GITHUB_ENV"
+
+            else
+
+              echo "$REPO does not exist."
+              echo "$REPO=false" >> "$GITHUB_ENV"
+
+            fi
+
+          done
+
+
+      # =========================================================
+      # DELETE ECR REPOSITORIES
+      # =========================================================
+
+      - name: Delete ECR repositories
+        run: |
+          echo "========================================================="
+          echo " DELETE ECR REPOSITORIES"
+          echo "========================================================="
+
+          for REPO in \
+            pulseops-stage-backend \
+            pulseops-stage-worker \
+            pulseops-stage-frontend
+          do
+
+            echo ""
+            echo "Processing ECR repository: $REPO"
+
+            if aws ecr describe-repositories \
+              --repository-names "$REPO" \
+              --region "$AWS_REGION" >/dev/null 2>&1; then
+
+              echo "Repository exists."
+              echo "Deleting $REPO..."
+
+              aws ecr delete-repository \
+                --repository-name "$REPO" \
+                --force \
+                --region "$AWS_REGION"
+
+            else
+
+              echo "Repository $REPO does not exist."
+              echo "Skipping."
+
+            fi
+
+          done
+
+
+      # =========================================================
+      # CHECK RDS
+      # =========================================================
+
+      - name: Check RDS instance
+        run: |
+          echo "========================================================="
+          echo " CHECKING RDS"
+          echo "========================================================="
+
+          DB_IDENTIFIER="pulseops-stage-postgres"
+
+          if aws rds describe-db-instances \
+            --db-instance-identifier "$DB_IDENTIFIER" \
+            --region "$AWS_REGION" >/dev/null 2>&1; then
+
+            echo "RDS instance exists."
+            echo "RDS_EXISTS=true" >> "$GITHUB_ENV"
+
+          else
+
+            echo "RDS instance does not exist."
+            echo "RDS_EXISTS=false" >> "$GITHUB_ENV"
+
+          fi
+
+
+      # =========================================================
+      # DELETE RDS IF EXISTS
+      # =========================================================
+
+      - name: Delete RDS instance
+        if: env.RDS_EXISTS == 'true'
+        run: |
+          echo "========================================================="
+          echo " DELETE RDS"
+          echo "========================================================="
+
+          DB_IDENTIFIER="pulseops-stage-postgres"
+
+          aws rds delete-db-instance \
+            --db-instance-identifier "$DB_IDENTIFIER" \
+            --skip-final-snapshot \
+            --delete-automated-backups \
+            --region "$AWS_REGION"
+
+          echo "RDS deletion requested."
+
+
+      # =========================================================
+      # CHECK REDIS
+      # =========================================================
+
+      - name: Check Redis
+        run: |
+          echo "========================================================="
+          echo " CHECKING REDIS"
+          echo "========================================================="
+
+          REDIS_ID="pulseops-stage-redis"
+
+          if aws elasticache describe-cache-clusters \
+            --cache-cluster-id "$REDIS_ID" \
+            --region "$AWS_REGION" >/dev/null 2>&1; then
+
+            echo "Redis cluster exists."
+            echo "REDIS_EXISTS=true" >> "$GITHUB_ENV"
+
+          else
+
+            echo "Redis cluster does not exist."
+            echo "REDIS_EXISTS=false" >> "$GITHUB_ENV"
+
+          fi
+
+
+      # =========================================================
+      # DELETE REDIS IF EXISTS
+      # =========================================================
+
+      - name: Delete Redis
+        if: env.REDIS_EXISTS == 'true'
+        run: |
+          echo "========================================================="
+          echo " DELETE REDIS"
+          echo "========================================================="
+
+          REDIS_ID="pulseops-stage-redis"
+
+          aws elasticache delete-cache-cluster \
+            --cache-cluster-id "$REDIS_ID" \
+            --region "$AWS_REGION"
+
+          echo "Redis deletion requested."
+
+
+      # =========================================================
+      # CHECK SQS
+      # =========================================================
+
+      - name: Check SQS queues
+        run: |
+          echo "========================================================="
+          echo " CHECKING SQS"
+          echo "========================================================="
+
+          for QUEUE in \
+            pulseops-stage-jobs \
+            pulseops-stage-jobs-dlq
+          do
+
+            echo ""
+            echo "Checking queue: $QUEUE"
+
+            if aws sqs get-queue-url \
+              --queue-name "$QUEUE" \
+              --region "$AWS_REGION" >/dev/null 2>&1; then
+
+              echo "$QUEUE exists."
+
+            else
+
+              echo "$QUEUE does not exist."
+              echo "Skipping."
+
+            fi
+
+          done
+
+
+      # =========================================================
+      # DELETE SQS
+      # =========================================================
+
+      - name: Delete SQS queues
+        run: |
+          echo "========================================================="
+          echo " DELETE SQS QUEUES"
+          echo "========================================================="
+
+          for QUEUE in \
+            pulseops-stage-jobs \
+            pulseops-stage-jobs-dlq
+          do
+
+            echo ""
+            echo "Processing queue: $QUEUE"
+
+            QUEUE_URL=$(aws sqs get-queue-url \
+              --queue-name "$QUEUE" \
+              --region "$AWS_REGION" \
+              --query 'QueueUrl' \
+              --output text 2>/dev/null || true)
+
+            if [ -n "$QUEUE_URL" ] && [ "$QUEUE_URL" != "None" ]; then
+
+              echo "Queue exists."
+              echo "Deleting $QUEUE..."
+
+              aws sqs delete-queue \
+                --queue-url "$QUEUE_URL" \
+                --region "$AWS_REGION"
+
+            else
+
+              echo "Queue $QUEUE does not exist."
+              echo "Skipping."
+
+            fi
+
+          done
+
+
+      # =========================================================
+      # HANDLE STALE TERRAFORM DATA SOURCES
+      # =========================================================
+
+      - name: Handle stale Terraform data sources
+        run: |
+          echo "========================================================="
+          echo " HANDLE STALE TERRAFORM DATA SOURCES"
+          echo "========================================================="
+
+          if [ "$EKS_EXISTS" = "false" ]; then
+
+            echo ""
+            echo "EKS cluster is missing."
+            echo "Checking for stale EKS data sources..."
+
+            if terraform state list | grep -q '^data.aws_eks_cluster.this$'; then
+
+              echo "Removing stale data.aws_eks_cluster.this"
+
+              terraform state rm \
+                'data.aws_eks_cluster.this' || true
+
+            else
+
+              echo "data.aws_eks_cluster.this not found."
+
+            fi
+
+
+            if terraform state list | grep -q '^data.aws_eks_cluster_auth.this$'; then
+
+              echo "Removing stale data.aws_eks_cluster_auth.this"
+
+              terraform state rm \
+                'data.aws_eks_cluster_auth.this' || true
+
+            else
+
+              echo "data.aws_eks_cluster_auth.this not found."
+
+            fi
+
+          else
+
+            echo "EKS cluster exists."
+            echo "Keeping EKS data sources."
+
+          fi
+
+
+      # =========================================================
+      # TERRAFORM STATE CHECK
+      # =========================================================
+
+      - name: Check Terraform state before destroy
+        run: |
+          echo "========================================================="
+          echo " TERRAFORM STATE BEFORE DESTROY"
+          echo "========================================================="
+
+          RESOURCE_COUNT=$(terraform state list 2>/dev/null | wc -l || true)
+
+          echo "Terraform resources in state: $RESOURCE_COUNT"
+
+          if [ "$RESOURCE_COUNT" -eq 0 ]; then
+
+            echo ""
+            echo "Terraform state is already empty."
+            echo "Nothing left for Terraform to destroy."
+
+          else
+
+            echo ""
+            echo "Terraform resources still exist:"
+            terraform state list || true
+
+          fi
 
 
       # =========================================================
@@ -313,37 +818,80 @@ jobs:
           echo " TERRAFORM DESTROY"
           echo "========================================================="
 
-          echo ""
-          echo "Destroying all Terraform-managed stage infrastructure..."
-          echo ""
-
           terraform apply \
             -input=false \
             -auto-approve \
             stage-destroy.tfplan
 
-          echo ""
-          echo "========================================================="
-          echo " TERRAFORM DESTROY COMPLETE"
-          echo "========================================================="
-
 
       # =========================================================
-      # VERIFY TERRAFORM STATE
+      # SECOND DESTROY PASS
       # =========================================================
 
-      - name: Verify Terraform state
+      - name: Terraform Destroy Remaining Resources
         if: always()
         run: |
           echo "========================================================="
-          echo " REMAINING TERRAFORM RESOURCES"
+          echo " CHECKING REMAINING TERRAFORM RESOURCES"
           echo "========================================================="
 
-          terraform state list || true
+          REMAINING=$(terraform state list 2>/dev/null | wc -l || true)
+
+          echo "Remaining resources in Terraform state: $REMAINING"
+
+          if [ "$REMAINING" -gt 0 ]; then
+
+            echo ""
+            echo "Resources still remain in Terraform state."
+            echo "Running another destroy pass..."
+
+            terraform destroy \
+              -auto-approve \
+              -var-file="environments/stage/terraform.tfvars" \
+              || true
+
+          else
+
+            echo ""
+            echo "Terraform state is empty."
+            echo "No additional destroy required."
+
+          fi
 
 
       # =========================================================
-      # FINAL AWS VERIFICATION
+      # FINAL TERRAFORM STATE
+      # =========================================================
+
+      - name: Final Terraform state verification
+        if: always()
+        run: |
+          echo "========================================================="
+          echo " FINAL TERRAFORM STATE"
+          echo "========================================================="
+
+          if terraform state list >/tmp/terraform-state.txt 2>/dev/null; then
+
+            if [ -s /tmp/terraform-state.txt ]; then
+
+              echo "WARNING: Terraform state still contains resources:"
+              cat /tmp/terraform-state.txt
+
+            else
+
+              echo "Terraform state is empty."
+              echo "All Terraform-managed resources have been removed."
+
+            fi
+
+          else
+
+            echo "Unable to read Terraform state."
+          fi
+
+
+      # =========================================================
+      # FINAL EKS VERIFICATION
       # =========================================================
 
       - name: Verify EKS deletion
@@ -361,13 +909,158 @@ jobs:
 
           else
 
-            echo "EKS cluster has been deleted."
+            echo "EKS cluster does not exist."
+            echo "EKS cleanup successful."
 
           fi
 
 
       # =========================================================
-      # FINAL CLEANUP SUMMARY
+      # FINAL RDS VERIFICATION
+      # =========================================================
+
+      - name: Verify RDS deletion
+        if: always()
+        run: |
+          echo "========================================================="
+          echo " VERIFY RDS DELETION"
+          echo "========================================================="
+
+          DB_IDENTIFIER="pulseops-stage-postgres"
+
+          if aws rds describe-db-instances \
+            --db-instance-identifier "$DB_IDENTIFIER" \
+            --region "$AWS_REGION" >/dev/null 2>&1; then
+
+            echo "WARNING: RDS instance still exists."
+
+          else
+
+            echo "RDS instance does not exist."
+            echo "RDS cleanup successful."
+
+          fi
+
+
+      # =========================================================
+      # FINAL REDIS VERIFICATION
+      # =========================================================
+
+      - name: Verify Redis deletion
+        if: always()
+        run: |
+          echo "========================================================="
+          echo " VERIFY REDIS DELETION"
+          echo "========================================================="
+
+          REDIS_ID="pulseops-stage-redis"
+
+          if aws elasticache describe-cache-clusters \
+            --cache-cluster-id "$REDIS_ID" \
+            --region "$AWS_REGION" >/dev/null 2>&1; then
+
+            echo "WARNING: Redis cluster still exists."
+
+          else
+
+            echo "Redis cluster does not exist."
+            echo "Redis cleanup successful."
+
+          fi
+
+
+      # =========================================================
+      # FINAL ECR VERIFICATION
+      # =========================================================
+
+      - name: Verify ECR deletion
+        if: always()
+        run: |
+          echo "========================================================="
+          echo " VERIFY ECR DELETION"
+          echo "========================================================="
+
+          for REPO in \
+            pulseops-stage-backend \
+            pulseops-stage-worker \
+            pulseops-stage-frontend
+          do
+
+            if aws ecr describe-repositories \
+              --repository-names "$REPO" \
+              --region "$AWS_REGION" >/dev/null 2>&1; then
+
+              echo "WARNING: ECR repository still exists: $REPO"
+
+            else
+
+              echo "ECR repository does not exist: $REPO"
+
+            fi
+
+          done
+
+
+      # =========================================================
+      # FINAL SQS VERIFICATION
+      # =========================================================
+
+      - name: Verify SQS deletion
+        if: always()
+        run: |
+          echo "========================================================="
+          echo " VERIFY SQS DELETION"
+          echo "========================================================="
+
+          for QUEUE in \
+            pulseops-stage-jobs \
+            pulseops-stage-jobs-dlq
+          do
+
+            if aws sqs get-queue-url \
+              --queue-name "$QUEUE" \
+              --region "$AWS_REGION" >/dev/null 2>&1; then
+
+              echo "WARNING: SQS queue still exists: $QUEUE"
+
+            else
+
+              echo "SQS queue does not exist: $QUEUE"
+
+            fi
+
+          done
+
+
+      # =========================================================
+      # FINAL SECRET VERIFICATION
+      # =========================================================
+
+      - name: Verify Secrets Manager deletion
+        if: always()
+        run: |
+          echo "========================================================="
+          echo " VERIFY SECRETS MANAGER DELETION"
+          echo "========================================================="
+
+          SECRET_NAME="pulseops-stage-database"
+
+          if aws secretsmanager describe-secret \
+            --secret-id "$SECRET_NAME" \
+            --region "$AWS_REGION" >/dev/null 2>&1; then
+
+            echo "WARNING: Database secret still exists."
+
+          else
+
+            echo "Database secret does not exist."
+            echo "Secrets Manager cleanup successful."
+
+          fi
+
+
+      # =========================================================
+      # FINAL SUMMARY
       # =========================================================
 
       - name: Destroy summary
@@ -379,13 +1072,19 @@ jobs:
           echo "========================================================="
 
           echo ""
-          echo "Terraform state:"
-          terraform state list || true
-
-          echo ""
-          echo "EKS cluster:"
+          echo "EKS Cluster:"
           echo "$EKS_CLUSTER_NAME"
 
           echo ""
-          echo "Destroy workflow completed."
+          echo "EKS existed during cleanup:"
+          echo "${EKS_EXISTS:-unknown}"
+
+          echo ""
+          echo "Terraform state after cleanup:"
+
+          terraform state list || true
+
+          echo ""
+          echo "========================================================="
+          echo " DESTROY WORKFLOW COMPLETED"
           echo "========================================================="
