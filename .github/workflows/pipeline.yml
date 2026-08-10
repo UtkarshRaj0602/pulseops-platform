@@ -291,6 +291,29 @@ jobs:
           done
 
     # ==========================================
+    # PHASE 2C - TERRAFORM KUBERNETES RESOURCES 
+    # ==========================================
+
+      - name: Terraform Kubernetes Resources Plan
+        run: |
+          echo "========== TERRAFORM KUBERNETES RESOURCES PLAN =========="
+
+          terraform plan \
+            -var-file="environments/stage/terraform.tfvars" \
+            -target=module.namespace \
+            -target=module.configmap \
+            -target=module.k8s_secrets \
+            -out=stage-kubernetes.tfplan
+
+      - name: Terraform Kubernetes Resources Apply
+        run: |
+          echo "========== TERRAFORM KUBERNETES RESOURCES APPLY =========="
+
+          terraform apply \
+            -auto-approve \
+            stage-kubernetes.tfplan
+
+    # ==========================================
     # Helm installation for Cluster Autoscaler
     # ==========================================
       - name: Prepare Helm for Cluster Autoscaler
