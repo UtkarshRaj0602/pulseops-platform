@@ -8,11 +8,21 @@ interface Props {
 export default function JobRow({ job }: Props) {
   return (
     <tr>
-      <td>{job.id}</td>
+      <td>
+        <div className="job-id">
+          {job.id}
+        </div>
+      </td>
+
       <td>
         <StatusBadge status={job.status} />
       </td>
-      <td>{job.result || "-"}</td>
+
+      <td>
+        <div className="job-result">
+          {job.result || "-"}
+        </div>
+      </td>
     </tr>
   );
 }

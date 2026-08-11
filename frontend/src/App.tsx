@@ -14,11 +14,25 @@ function App() {
   };
 
   return (
-    <div className="container">
-      <Header />
-      <JobForm onSubmit={handleSubmit} />
-      <JobTable jobs={jobs} />
-    </div>
+    <main className="app">
+      <div className="container">
+        <Header />
+
+        <JobForm onSubmit={handleSubmit} />
+
+        <section className="jobs-card">
+          <div className="jobs-header">
+            <h2>Recent Jobs</h2>
+
+            <span className="jobs-count">
+              {jobs.length} jobs
+            </span>
+          </div>
+
+          <JobTable jobs={jobs} />
+        </section>
+      </div>
+    </main>
   );
 }
 

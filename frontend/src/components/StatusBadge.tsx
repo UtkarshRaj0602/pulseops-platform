@@ -2,9 +2,13 @@ interface Props {
   status: string;
 }
 
-export default function StatusBadge({ status }: Props) {
+export default function StatusBadge({
+  status,
+}: Props) {
   return (
-    <span className={`badge ${status.toLowerCase()}`}>
+    <span
+      className={`badge ${status.toLowerCase()}`}
+    >
       {status}
     </span>
   );

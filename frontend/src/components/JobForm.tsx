@@ -5,46 +5,59 @@ interface Props {
 }
 
 export default function JobForm({ onSubmit }: Props) {
-
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
+    const value = text.trim();
 
-    if (!text.trim()) return;
+    if (!value) {
+      return;
+    }
 
     setLoading(true);
 
     try {
-
-      await onSubmit(text);
-
+      await onSubmit(value);
       setText("");
-
     } finally {
-
       setLoading(false);
-
     }
   };
 
   return (
-    <div className="job-form">
+    <section className="job-form-card">
+      <h2 className="job-form-title">
+        Submit a Job
+      </h2>
 
-      <input
-        type="text"
-        placeholder="Enter text"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
+      <p className="job-form-description">
+        Enter any text and PulseOps will process it
+        asynchronously and return the result in
+        uppercase.
+      </p>
 
-      <button
-        onClick={handleSubmit}
-        disabled={loading}
-      >
-        {loading ? "Submitting..." : "Submit Job"}
-      </button>
+      <div className="job-form">
+        <input
+          type="text"
+          placeholder="e.g. hello pulseops"
+          value={text}
+          maxLength={5000}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleSubmit();
+            }
+          }}
+        />
 
-    </div>
+        <button
+          onClick={handleSubmit}
+          disabled={loading || !text.trim()}
+        >
+          {loading ? "Submitting..." : "Submit Job"}
+        </button>
+      </div>
+    </section>
   );
 }
