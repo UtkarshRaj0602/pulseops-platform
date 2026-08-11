@@ -74,18 +74,24 @@ def create_job(
     try:
         send_job(job_id)
 
-    except Exception:
+    # except Exception:
+    #     job.status = "FAILED"
+
+    #     try:
+    #         db.commit()
+    #     except Exception:
+    #         db.rollback()
+
+    #     raise HTTPException(
+    #         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+    #         detail="Failed to enqueue job",
+    #     )
+
+    except Exception as exc:
         job.status = "FAILED"
-
-        try:
-            db.commit()
-        except Exception:
-            db.rollback()
-
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Failed to enqueue job",
-        )
+        db.commit()
+        print(f"SQS enqueue failed: {type(exc).__name__}: {exc}", flush=True)
+        raise HTTPException(status_code=503, detail=f"Failed to enqueue job: {exc}")
 
     # --------------------------------------------------
     # 3. Cache initial job state
