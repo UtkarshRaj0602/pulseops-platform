@@ -28,6 +28,25 @@ resource "aws_iam_role" "eks_node" {
 
 }
 
+resource "aws_iam_role_policy" "eks_node_sqs" {
+  name = "${var.environment}-eks-node-sqs"
+  role = aws_iam_role.eks_node.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:SendMessage",
+          "sqs:GetQueueAttributes"
+        ]
+        Resource = var.sqs_queue_arn
+      }
+    ]
+  })
+}
+
 # resource "aws_iam_role" "github_actions" {
 
 #   name = "${local.name_prefix}-github-actions-role"

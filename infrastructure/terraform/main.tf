@@ -20,6 +20,8 @@ module "iam" {
 
   project_name = var.project_name
   environment  = var.environment
+
+  sqs_queue_arn = module.sqs.queue_arn
 }
 module "security" {
 
