@@ -377,146 +377,146 @@ jobs:
 # TERRAFORM ROLLBACK
 # =========================================================
 
-  terraform-rollback:
-    name: Terraform Rollback
-    runs-on: ubuntu-latest
+  # terraform-rollback:
+  #   name: Terraform Rollback
+  #   runs-on: ubuntu-latest
 
-    if: ${{ always() && needs.terraform.result == 'failure' }}
+  #   if: ${{ always() && needs.terraform.result == 'failure' }}
 
-    needs:
-      - terraform
+  #   needs:
+  #     - terraform
 
-    defaults:
-      run:
-        working-directory: infrastructure/terraform
+  #   defaults:
+  #     run:
+  #       working-directory: infrastructure/terraform
 
-    steps:
+  #   steps:
 
-      # =====================================================
-      # CHECKOUT
-      # =====================================================
+  #     # =====================================================
+  #     # CHECKOUT
+  #     # =====================================================
 
-      - name: Checkout repository
-        uses: actions/checkout@v6
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v6
 
-      # =====================================================
-      # AWS CREDENTIALS
-      # =====================================================
+  #     # =====================================================
+  #     # AWS CREDENTIALS
+  #     # =====================================================
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v6
+  #       with:
+  #         role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+  #         aws-region: ${{ env.AWS_REGION }}
 
-      # =====================================================
-      # VERIFY AWS
-      # =====================================================
+  #     # =====================================================
+  #     # VERIFY AWS
+  #     # =====================================================
 
-      - name: Verify AWS identity
-        run: |
-          echo "========== AWS IDENTITY =========="
-          aws sts get-caller-identity
+  #     - name: Verify AWS identity
+  #       run: |
+  #         echo "========== AWS IDENTITY =========="
+  #         aws sts get-caller-identity
 
-      # =====================================================
-      # TERRAFORM
-      # =====================================================
+  #     # =====================================================
+  #     # TERRAFORM
+  #     # =====================================================
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+  #     - name: Setup Terraform
+  #       uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Init
-        run: |
-          echo "========== TERRAFORM INIT =========="
-          terraform init
+  #     - name: Terraform Init
+  #       run: |
+  #         echo "========== TERRAFORM INIT =========="
+  #         terraform init
 
-      # =====================================================
-      # FORCE DELETE STAGE DATABASE SECRET
-      # =====================================================
+  #     # =====================================================
+  #     # FORCE DELETE STAGE DATABASE SECRET
+  #     # =====================================================
 
-      - name: Force delete Stage database secret
-        run: |
-          echo "========== FORCE DELETE STAGE DATABASE SECRET =========="
+  #     - name: Force delete Stage database secret
+  #       run: |
+  #         echo "========== FORCE DELETE STAGE DATABASE SECRET =========="
 
-          SECRET_NAME="pulseops-stage-database"
+  #         SECRET_NAME="pulseops-stage-database"
 
-          echo "Checking whether ${SECRET_NAME} exists..."
+  #         echo "Checking whether ${SECRET_NAME} exists..."
 
-          if aws secretsmanager describe-secret \
-            --secret-id "${SECRET_NAME}" \
-            --region "${AWS_REGION}" >/dev/null 2>&1; then
+  #         if aws secretsmanager describe-secret \
+  #           --secret-id "${SECRET_NAME}" \
+  #           --region "${AWS_REGION}" >/dev/null 2>&1; then
 
-            echo "Secret exists."
-            echo "Force deleting ${SECRET_NAME}..."
+  #           echo "Secret exists."
+  #           echo "Force deleting ${SECRET_NAME}..."
 
-            aws secretsmanager delete-secret \
-              --secret-id "${SECRET_NAME}" \
-              --force-delete-without-recovery \
-              --region "${AWS_REGION}"
+  #           aws secretsmanager delete-secret \
+  #             --secret-id "${SECRET_NAME}" \
+  #             --force-delete-without-recovery \
+  #             --region "${AWS_REGION}"
 
-            echo "Secret deletion requested."
+  #           echo "Secret deletion requested."
 
-          else
+  #         else
 
-            echo "Secret does not exist. Nothing to delete."
+  #           echo "Secret does not exist. Nothing to delete."
 
-          fi
+  #         fi
 
-          echo ""
-          echo "Waiting for secret deletion..."
+  #         echo ""
+  #         echo "Waiting for secret deletion..."
 
-          for i in {1..12}; do
+  #         for i in {1..12}; do
 
-            if aws secretsmanager describe-secret \
-              --secret-id "${SECRET_NAME}" \
-              --region "${AWS_REGION}" >/dev/null 2>&1; then
+  #           if aws secretsmanager describe-secret \
+  #             --secret-id "${SECRET_NAME}" \
+  #             --region "${AWS_REGION}" >/dev/null 2>&1; then
 
-              echo "Secret still exists. Attempt ${i}/12"
-              sleep 5
+  #             echo "Secret still exists. Attempt ${i}/12"
+  #             sleep 5
 
-            else
+  #           else
 
-              echo "Secret is no longer present."
-              break
+  #             echo "Secret is no longer present."
+  #             break
 
-            fi
+  #           fi
 
-          done
+  #         done
 
-          echo ""
-          echo "========== SECRET CLEANUP COMPLETE =========="
+  #         echo ""
+  #         echo "========== SECRET CLEANUP COMPLETE =========="
 
-      # =====================================================
-      # TERRAFORM DESTROY
-      # =====================================================
+  #     # =====================================================
+  #     # TERRAFORM DESTROY
+  #     # =====================================================
 
-      - name: Terraform Rollback
-        run: |
-          echo "========================================================="
-          echo " TERRAFORM ROLLBACK"
-          echo "========================================================="
+  #     - name: Terraform Rollback
+  #       run: |
+  #         echo "========================================================="
+  #         echo " TERRAFORM ROLLBACK"
+  #         echo "========================================================="
 
-          echo ""
-          echo "Terraform failed."
-          echo "Starting rollback of Terraform-managed stage infrastructure..."
-          echo ""
+  #         echo ""
+  #         echo "Terraform failed."
+  #         echo "Starting rollback of Terraform-managed stage infrastructure..."
+  #         echo ""
 
-          terraform destroy \
-            -auto-approve \
-            -var-file="environments/stage/terraform.tfvars"
+  #         terraform destroy \
+  #           -auto-approve \
+  #           -var-file="environments/stage/terraform.tfvars"
 
-      # =====================================================
-      # VERIFY TERRAFORM STATE
-      # =====================================================
+  #     # =====================================================
+  #     # VERIFY TERRAFORM STATE
+  #     # =====================================================
 
-      - name: Verify Terraform State
-        if: always()
-        run: |
-          echo "========================================================="
-          echo " REMAINING TERRAFORM RESOURCES"
-          echo "========================================================="
+  #     - name: Verify Terraform State
+  #       if: always()
+  #       run: |
+  #         echo "========================================================="
+  #         echo " REMAINING TERRAFORM RESOURCES"
+  #         echo "========================================================="
 
-          terraform state list || true
+  #         terraform state list || true
 
   # =========================================================
   # BACKEND #
