@@ -32,7 +32,7 @@ while True:
 
     body = json.loads(message["Body"])
 
-    payload = json.loads(body["Message"])
+    payload = body
 
     job_id = payload["job_id"]
 
