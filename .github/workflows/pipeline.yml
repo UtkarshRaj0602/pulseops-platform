@@ -916,6 +916,17 @@ jobs:
 
           kubectl get all -n pulseops
 
+      # -------------------------------------------------------
+      # Database migration job
+      # -------------------------------------------------------
+
+      - name: Run Database Migrations
+        run: |
+          echo "========== RUNNING DATABASE MIGRATION =========="
+          kubectl apply -f infrastructure/kubernetes/jobs/db-migration.yaml
+          kubectl wait --for=condition=complete job/pulseops-db-migration -n pulseops --timeout=180s
+          kubectl logs job/pulseops-db-migration -n pulseops
+
 
       # -------------------------------------------------------
       # UPDATE BACKEND IMAGE
