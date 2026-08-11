@@ -923,9 +923,39 @@ jobs:
       - name: Run Database Migrations
         run: |
           echo "========== RUNNING DATABASE MIGRATION =========="
-          kubectl apply -f infrastructure/kubernetes/jobs/db-migration.yaml
-          kubectl wait --for=condition=complete job/pulseops-db-migration -n pulseops --timeout=180s
-          kubectl logs job/pulseops-db-migration -n pulseops
+
+          echo "Using backend image:"
+          echo "051826706795.dkr.ecr.ap-south-1.amazonaws.com/pulseops-stage-backend:${GITHUB_SHA}"
+
+          echo "Deleting previous migration job if it exists..."
+          kubectl delete job pulseops-db-migration \
+            -n pulseops \
+            --ignore-not-found=true
+
+          echo "Preparing migration manifest..."
+          sed -i "s|IMAGE_TAG|${GITHUB_SHA}|g" \
+            infrastructure/kubernetes/jobs/db-migration.yaml
+
+          echo "Migration image:"
+          grep "image:" infrastructure/kubernetes/jobs/db-migration.yaml
+
+          echo "Applying migration job..."
+          kubectl apply \
+            -f infrastructure/kubernetes/jobs/db-migration.yaml
+
+          echo "Waiting for migration to complete..."
+          kubectl wait \
+            --for=condition=complete \
+            job/pulseops-db-migration \
+            -n pulseops \
+            --timeout=180s
+
+          echo "========== MIGRATION LOGS =========="
+          kubectl logs \
+            job/pulseops-db-migration \
+            -n pulseops
+
+          echo "========== MIGRATION COMPLETE =========="
 
 
       # -------------------------------------------------------
