@@ -357,16 +357,6 @@ jobs:
             -auto-approve \
             stage-cluster-autoscaler.tfplan
 
-
-    # =========================================================
-    # Stage infra validation
-    # =========================================================
-
-      # - name: Validate Stage Infrastructure
-      #   run: |
-      #     chmod +x scripts/validate-stage.sh
-      #     ./scripts/validate-stage.sh
-
     # ==========================================
     # OUTPUTS
     # ==========================================
