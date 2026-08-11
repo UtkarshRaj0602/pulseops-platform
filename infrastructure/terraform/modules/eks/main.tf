@@ -105,7 +105,7 @@ module "eks" {
 
       ami_type = "AL2023_x86_64_STANDARD"
 
-      additional_security_group_ids = [
+      vpc_security_group_ids = [
         var.node_security_group_id
       ]
 
