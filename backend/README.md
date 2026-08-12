@@ -2,6 +2,8 @@
 
 FastAPI service responsible for job submission and retrieval.
 
+![alt text](image.png)
+
 ## Responsibilities
 
 - `POST /jobs` creates a job and publishes it to SQS.
